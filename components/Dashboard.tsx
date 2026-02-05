@@ -57,6 +57,7 @@ interface DashboardProps {
     address?: string;
     state?: string;
   } | null;
+  onNavigate?: (tab: string) => void;
 }
 
 export default function Dashboard({
@@ -66,6 +67,7 @@ export default function Dashboard({
   orders = [],
   userStats,
   userLocation,
+  onNavigate,
 }: DashboardProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
@@ -579,7 +581,10 @@ export default function Dashboard({
             <div className="space-y-3">
               {userType === "farmer" ? (
                 <>
-                  <button className="w-full flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("add-product")}
+                    className="w-full flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
+                  >
                     <Package className="w-5 h-5 text-green-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">
@@ -591,7 +596,10 @@ export default function Dashboard({
                     </div>
                   </button>
 
-                  <button className="w-full flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("my-crops")}
+                    className="w-full flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left"
+                  >
                     <BarChart3 className="w-5 h-5 text-blue-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">
@@ -601,7 +609,10 @@ export default function Dashboard({
                     </div>
                   </button>
 
-                  <button className="w-full flex items-center p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("order-requests")}
+                    className="w-full flex items-center p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left"
+                  >
                     <Users className="w-5 h-5 text-orange-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">
@@ -615,7 +626,10 @@ export default function Dashboard({
                 </>
               ) : (
                 <>
-                  <button className="w-full flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("marketplace")}
+                    className="w-full flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left"
+                  >
                     <ShoppingCart className="w-5 h-5 text-blue-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">
@@ -627,7 +641,10 @@ export default function Dashboard({
                     </div>
                   </button>
 
-                  <button className="w-full flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("orders")}
+                    className="w-full flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
+                  >
                     <Package className="w-5 h-5 text-green-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">My Orders</p>
@@ -635,7 +652,10 @@ export default function Dashboard({
                     </div>
                   </button>
 
-                  <button className="w-full flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left">
+                  <button
+                    onClick={() => onNavigate?.("find-suppliers")}
+                    className="w-full flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left"
+                  >
                     <Users className="w-5 h-5 text-purple-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">

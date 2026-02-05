@@ -176,7 +176,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Order request created successfully!");
+        showAlert("Order request created successfully!", "success");
         setShowCreateForm(false);
         setFormData({
           product_name: "",
@@ -188,11 +188,11 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
         });
         fetchOrderRequests();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
       console.error("Error creating order request:", error);
-      alert("Error creating order request. Please try again.");
+      showAlert("Error creating order request. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }

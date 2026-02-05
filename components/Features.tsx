@@ -63,7 +63,7 @@ export default function Features() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl font-bold text-primary-dark sm:text-4xl">
-              Why Choose AgriBridge?
+              Why Choose KisaanSaarthi?
             </h2>
             <p className="mt-6 text-lg text-gray-700">
               We believe in fair trade and fresher food. By cutting out the

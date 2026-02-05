@@ -1,28 +1,43 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useI18n } from '@/lib/i18n/context';
-import { Sprout, Wheat, ShoppingCart, Eye, EyeOff, CloudSun, Leaf, Store, ChevronRight, Wind, Droplets, Thermometer } from 'lucide-react';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useI18n } from "@/lib/i18n/context";
+import {
+  Sprout,
+  Wheat,
+  ShoppingCart,
+  Eye,
+  EyeOff,
+  CloudSun,
+  Leaf,
+  Store,
+  ChevronRight,
+  Wind,
+  Droplets,
+  Thermometer,
+} from "lucide-react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function LoginPage() {
   const { t } = useI18n();
   const [isLogin, setIsLogin] = useState(true);
-  const [userType, setUserType] = useState<'farmer' | 'buyer' | 'wholesaler'>('farmer');
+  const [userType, setUserType] = useState<"farmer" | "buyer" | "wholesaler">(
+    "farmer",
+  );
   const [formData, setFormData] = useState({
-    name: '',
-    company_name: '',
-    gst_number: '',
-    address: '',
-    identifier: '', // email or phone
-    phone_number: '',
-    password: '',
-    confirmPassword: ''
+    name: "",
+    company_name: "",
+    gst_number: "",
+    address: "",
+    identifier: "", // email or phone
+    phone_number: "",
+    password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [weather, setWeather] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const router = useRouter();
@@ -35,14 +50,14 @@ export default function LoginPage() {
   const fetchWeather = async () => {
     try {
       setWeatherLoading(true);
-      const response = await fetch('/api/weather');
+      const response = await fetch("/api/weather");
       const data = await response.json();
 
       if (data.success) {
         setWeather(data.weather);
       }
     } catch (error) {
-      console.error('Error fetching weather:', error);
+      console.error("Error fetching weather:", error);
     } finally {
       setWeatherLoading(false);
     }
@@ -51,54 +66,54 @@ export default function LoginPage() {
   // Mock weather data as fallback
   const weatherData = weather || {
     temperature: 24,
-    description: 'Sunny',
+    description: "Sunny",
     humidity: 65,
     windSpeed: 12,
-    location: 'Regional Market'
+    location: "Regional Market",
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       if (isLogin) {
         // Login
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             identifier: formData.identifier,
-            password: formData.password
-          })
+            password: formData.password,
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          if (data.user.role === 'farmer') {
-            router.push('/dashboard/farmer');
-          } else if (data.user.role === 'wholesaler') {
-            router.push('/dashboard/wholesaler');
+          localStorage.setItem("user", JSON.stringify(data.user));
+          if (data.user.role === "farmer") {
+            router.replace("/dashboard/farmer");
+          } else if (data.user.role === "wholesaler") {
+            router.replace("/dashboard/wholesaler");
           } else {
-            router.push('/dashboard/buyer');
+            router.replace("/dashboard/buyer");
           }
         } else {
-          setError(data.error || t('auth.loginFailed'));
+          setError(data.error || t("auth.loginFailed"));
         }
       } else {
         // Register
         if (formData.password !== formData.confirmPassword) {
-          setError(t('auth.passwordsDoNotMatch'));
+          setError(t("auth.passwordsDoNotMatch"));
           setLoading(false);
           return;
         }
 
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: formData.name,
             company_name: formData.company_name,
@@ -107,57 +122,81 @@ export default function LoginPage() {
             email: formData.identifier,
             phone_number: formData.phone_number,
             password: formData.password,
-            role: userType
-          })
+            role: userType,
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          if (data.user.role === 'farmer') {
-            router.push('/dashboard/farmer');
-          } else if (data.user.role === 'wholesaler') {
-            router.push('/dashboard/wholesaler');
+          localStorage.setItem("user", JSON.stringify(data.user));
+          if (data.user.role === "farmer") {
+            router.replace("/dashboard/farmer");
+          } else if (data.user.role === "wholesaler") {
+            router.replace("/dashboard/wholesaler");
           } else {
-            router.push('/dashboard/buyer');
+            router.replace("/dashboard/buyer");
           }
         } else {
-          setError(data.error || t('auth.registrationFailed'));
+          setError(data.error || t("auth.registrationFailed"));
         }
       }
     } catch (error) {
-      setError(t('auth.networkError'));
+      setError(t("auth.networkError"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
-  const themeColor = userType === 'farmer' ? 'green' : userType === 'wholesaler' ? 'purple' : 'blue';
-  const bgColor = userType === 'farmer' ? 'bg-green-50' : userType === 'wholesaler' ? 'bg-purple-50' : 'bg-blue-50';
-  const gradientColor = userType === 'farmer' ? 'from-green-600 to-emerald-800' : userType === 'wholesaler' ? 'from-purple-600 to-indigo-800' : 'from-blue-600 to-indigo-800';
-  const buttonColor = userType === 'farmer' ? 'bg-green-600 hover:bg-green-700' : userType === 'wholesaler' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700';
+  const themeColor =
+    userType === "farmer"
+      ? "green"
+      : userType === "wholesaler"
+        ? "purple"
+        : "blue";
+  const bgColor =
+    userType === "farmer"
+      ? "bg-green-50"
+      : userType === "wholesaler"
+        ? "bg-purple-50"
+        : "bg-blue-50";
+  const gradientColor =
+    userType === "farmer"
+      ? "from-green-600 to-emerald-800"
+      : userType === "wholesaler"
+        ? "from-purple-600 to-indigo-800"
+        : "from-blue-600 to-indigo-800";
+  const buttonColor =
+    userType === "farmer"
+      ? "bg-green-600 hover:bg-green-700"
+      : userType === "wholesaler"
+        ? "bg-purple-600 hover:bg-purple-700"
+        : "bg-blue-600 hover:bg-blue-700";
 
   return (
-    <div className={`min-h-screen flex flex-col ${bgColor} font-sans transition-colors duration-500`}>
+    <div
+      className={`min-h-screen flex flex-col ${bgColor} font-sans transition-colors duration-500`}
+    >
       {/* Navigation Bar */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Desktop Navigation */}
           <div className="hidden sm:flex justify-between items-center h-14">
             <div className="flex items-center space-x-2">
-              <div className={`p-1.5 rounded-lg bg-gradient-to-br ${gradientColor} text-white shadow-lg`}>
+              <div
+                className={`p-1.5 rounded-lg bg-gradient-to-br ${gradientColor} text-white shadow-lg`}
+              >
                 <Sprout className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                {t('auth.appTitle')}
+                {t("auth.appTitle")}
               </span>
             </div>
             <LanguageSwitcher />
@@ -167,11 +206,13 @@ export default function LoginPage() {
           <div className="sm:hidden py-3">
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center space-x-2">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-br ${gradientColor} text-white shadow-lg`}>
+                <div
+                  className={`p-1.5 rounded-lg bg-gradient-to-br ${gradientColor} text-white shadow-lg`}
+                >
                   <Sprout className="w-4 h-4" />
                 </div>
                 <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                  {t('auth.appTitle')}
+                  {t("auth.appTitle")}
                 </span>
               </div>
               <LanguageSwitcher />
@@ -182,35 +223,47 @@ export default function LoginPage() {
 
       {/* Main Content Area */}
       <div className="flex-grow flex flex-col lg:flex-row overflow-hidden max-w-7xl mx-auto min-h-0">
-
         {/* Left Side - Hero Content & Weather */}
         <div className="lg:w-3/5 p-4 sm:p-6 lg:p-12 lg:pl-13 xl:pl-20 flex flex-col justify-center relative">
           {/* Decorative Background Elements */}
-          <div className={`absolute top-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-${themeColor}-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob`}></div>
-          <div className={`absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000`}></div>
-          <div className={`absolute -bottom-8 left-10 sm:left-20 w-32 h-32 sm:w-64 sm:h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000`}></div>
+          <div
+            className={`absolute top-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-${themeColor}-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob`}
+          ></div>
+          <div
+            className={`absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000`}
+          ></div>
+          <div
+            className={`absolute -bottom-8 left-10 sm:left-20 w-32 h-32 sm:w-64 sm:h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000`}
+          ></div>
 
           <div className="relative z-10 max-w-lg mx-auto lg:mx-0">
-            <div className={`inline-flex items-center px-3 py-1.5 rounded-full ${userType === 'farmer' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} mb-4 sm:mb-6 shadow-sm border border-${themeColor}-200`}>
+            <div
+              className={`inline-flex items-center px-3 py-1.5 rounded-full ${userType === "farmer" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"} mb-4 sm:mb-6 shadow-sm border border-${themeColor}-200`}
+            >
               <span className="flex h-2 w-2 rounded-full bg-current mr-2 animate-pulse"></span>
               <span className="text-xs font-semibold tracking-wide uppercase">
-                {userType === 'farmer' ? t('auth.empoweringFarmers') : t('auth.connectingBuyers')}
+                {userType === "farmer"
+                  ? t("auth.empoweringFarmers")
+                  : t("auth.connectingBuyers")}
               </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-              {t('auth.grow')}. <br />
-              <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientColor}`}>
-                {t('auth.connect')}.
-              </span> <br />
-              {t('auth.thrive')}.
+              {t("auth.grow")}. <br />
+              <span
+                className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientColor}`}
+              >
+                {t("auth.connect")}.
+              </span>{" "}
+              <br />
+              {t("auth.thrive")}.
             </h1>
 
             <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-              {t('auth.appSubtitle')}
-              {userType === 'farmer'
-                ? ` ${t('auth.listProduce')}`
-                : ` ${t('auth.accessFresh')}`}
+              {t("auth.appSubtitle")}
+              {userType === "farmer"
+                ? ` ${t("auth.listProduce")}`
+                : ` ${t("auth.accessFresh")}`}
             </p>
 
             {/* Weather Widget */}
@@ -218,7 +271,9 @@ export default function LoginPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2 text-gray-700">
                   <CloudSun className="w-4 h-4 text-orange-500" />
-                  <span className="font-semibold text-sm">{t('weather.liveConditions')}</span>
+                  <span className="font-semibold text-sm">
+                    {t("weather.liveConditions")}
+                  </span>
                 </div>
                 {weather && weather.location && (
                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md hidden sm:inline">
@@ -233,28 +288,34 @@ export default function LoginPage() {
                 <div className="text-center p-2 bg-white rounded-lg shadow-sm">
                   <Thermometer className="w-5 h-5 mx-auto mb-1 text-red-500" />
                   <div className="text-base font-bold text-gray-900">
-                    {weatherLoading ? '...' : `${weatherData.temperature}°C`}
+                    {weatherLoading ? "..." : `${weatherData.temperature}°C`}
                   </div>
-                  <div className="text-[10px] text-gray-500">{t('weather.temp')}</div>
+                  <div className="text-[10px] text-gray-500">
+                    {t("weather.temp")}
+                  </div>
                 </div>
                 <div className="text-center p-2 bg-white rounded-lg shadow-sm">
                   <Droplets className="w-5 h-5 mx-auto mb-1 text-blue-500" />
                   <div className="text-base font-bold text-gray-900">
-                    {weatherLoading ? '...' : `${weatherData.humidity}%`}
+                    {weatherLoading ? "..." : `${weatherData.humidity}%`}
                   </div>
-                  <div className="text-[10px] text-gray-500">{t('weather.humidity')}</div>
+                  <div className="text-[10px] text-gray-500">
+                    {t("weather.humidity")}
+                  </div>
                 </div>
                 <div className="text-center p-2 bg-white rounded-lg shadow-sm">
                   <Wind className="w-5 h-5 mx-auto mb-1 text-gray-500" />
                   <div className="text-base font-bold text-gray-900">
-                    {weatherLoading ? '...' : `${weatherData.windSpeed} km/h`}
+                    {weatherLoading ? "..." : `${weatherData.windSpeed} km/h`}
                   </div>
-                  <div className="text-[10px] text-gray-500">{t('weather.wind')}</div>
+                  <div className="text-[10px] text-gray-500">
+                    {t("weather.wind")}
+                  </div>
                 </div>
               </div>
               {weather && weather.isDemo && (
                 <p className="text-xs text-gray-400 mt-2 text-center">
-                  * {t('weather.demoData')}
+                  * {t("weather.demoData")}
                 </p>
               )}
             </div>
@@ -268,54 +329,59 @@ export default function LoginPage() {
             <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
               <button
                 onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${isLogin
-                  ? 'bg-white text-gray-900 shadow-md transform scale-[1.02]'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${
+                  isLogin
+                    ? "bg-white text-gray-900 shadow-md transform scale-[1.02]"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
-                <span className="text-sm">{t('auth.login')}</span>
+                <span className="text-sm">{t("auth.login")}</span>
               </button>
               <button
                 onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${!isLogin
-                  ? 'bg-white text-gray-900 shadow-md transform scale-[1.02]'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${
+                  !isLogin
+                    ? "bg-white text-gray-900 shadow-md transform scale-[1.02]"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
-                <span className="text-sm">{t('auth.register')}</span>
+                <span className="text-sm">{t("auth.register")}</span>
               </button>
             </div>
 
             {/* Role Toggle */}
             <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
               <button
-                onClick={() => setUserType('farmer')}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${userType === 'farmer'
-                  ? 'bg-white text-green-700 shadow-md transform scale-[1.02]'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                onClick={() => setUserType("farmer")}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${
+                  userType === "farmer"
+                    ? "bg-white text-green-700 shadow-md transform scale-[1.02]"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 <Wheat className="w-4 h-4" />
-                <span className="text-sm">{t('auth.farmer')}</span>
+                <span className="text-sm">{t("auth.farmer")}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setUserType('buyer')}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${userType === 'buyer'
-                  ? 'bg-white text-blue-700 shadow-md transform scale-[1.02]'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                onClick={() => setUserType("buyer")}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${
+                  userType === "buyer"
+                    ? "bg-white text-blue-700 shadow-md transform scale-[1.02]"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span className="text-sm">{t('auth.buyer')}</span>
+                <span className="text-sm">{t("auth.buyer")}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setUserType('wholesaler')}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${userType === 'wholesaler'
-                  ? 'bg-white text-purple-700 shadow-md transform scale-[1.02]'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                onClick={() => setUserType("wholesaler")}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium transition-all duration-300 ${
+                  userType === "wholesaler"
+                    ? "bg-white text-purple-700 shadow-md transform scale-[1.02]"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 <Store className="w-4 h-4" />
                 <span className="text-sm">Wholesaler</span>
@@ -324,34 +390,37 @@ export default function LoginPage() {
 
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                {isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}
+                {isLogin ? t("auth.welcomeBack") : t("auth.createAccount")}
               </h2>
               <p className="text-sm text-gray-500">
-                {isLogin ? t('auth.enterCredentials') : t('auth.joinCommunity')}
+                {isLogin ? t("auth.enterCredentials") : t("auth.joinCommunity")}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-
               {!isLogin && (
                 <div className="group">
-                  <label className="block text-xs font-medium text-gray-700 mb-1 ml-1">{t('auth.fullName')}</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1 ml-1">
+                    {t("auth.fullName")}
+                  </label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all duration-200 text-sm focus:ring-${themeColor}-500`}
-                    placeholder={t('auth.fullName')}
+                    placeholder={t("auth.fullName")}
                     required={!isLogin}
                   />
                 </div>
               )}
 
-              {!isLogin && userType === 'wholesaler' && (
+              {!isLogin && userType === "wholesaler" && (
                 <>
                   <div className="group space-y-1">
-                    <label className="block text-xs font-medium text-gray-700 ml-1">Company Name</label>
+                    <label className="block text-xs font-medium text-gray-700 ml-1">
+                      Company Name
+                    </label>
                     <input
                       type="text"
                       name="company_name"
@@ -359,11 +428,13 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all duration-200 text-sm focus:ring-${themeColor}-500`}
                       placeholder="AgriCorp Lmt."
-                      required={!isLogin && userType === 'wholesaler'}
+                      required={!isLogin && userType === "wholesaler"}
                     />
                   </div>
                   <div className="group space-y-1">
-                    <label className="block text-xs font-medium text-gray-700 ml-1">GST Number</label>
+                    <label className="block text-xs font-medium text-gray-700 ml-1">
+                      GST Number
+                    </label>
                     <input
                       type="text"
                       name="gst_number"
@@ -371,11 +442,13 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all duration-200 text-sm focus:ring-${themeColor}-500`}
                       placeholder="22AAAAA0000A1Z5"
-                      required={!isLogin && userType === 'wholesaler'}
+                      required={!isLogin && userType === "wholesaler"}
                     />
                   </div>
                   <div className="group space-y-1">
-                    <label className="block text-xs font-medium text-gray-700 ml-1">Business Address</label>
+                    <label className="block text-xs font-medium text-gray-700 ml-1">
+                      Business Address
+                    </label>
                     <input
                       type="text"
                       name="address"
@@ -383,7 +456,7 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all duration-200 text-sm focus:ring-${themeColor}-500`}
                       placeholder="123 Market Yard, City"
-                      required={!isLogin && userType === 'wholesaler'}
+                      required={!isLogin && userType === "wholesaler"}
                     />
                   </div>
                 </>
@@ -391,7 +464,7 @@ export default function LoginPage() {
 
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-gray-700 ml-1">
-                  {isLogin ? t('auth.emailOrPhone') : t('auth.email')}
+                  {isLogin ? t("auth.emailOrPhone") : t("auth.email")}
                 </label>
                 <div className="relative">
                   <input
@@ -400,7 +473,7 @@ export default function LoginPage() {
                     value={formData.identifier}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-${themeColor}-500 focus:bg-white outline-none transition-all duration-200 text-sm`}
-                    placeholder={isLogin ? t('auth.email') : t('auth.email')}
+                    placeholder={isLogin ? t("auth.email") : t("auth.email")}
                     required
                   />
                 </div>
@@ -408,21 +481,25 @@ export default function LoginPage() {
 
               {!isLogin && (
                 <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700 ml-1">{t('auth.phoneNumber')}</label>
+                  <label className="block text-xs font-medium text-gray-700 ml-1">
+                    {t("auth.phoneNumber")}
+                  </label>
                   <input
                     type="tel"
                     name="phone_number"
                     value={formData.phone_number}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-${themeColor}-500 focus:bg-white outline-none transition-all duration-200 text-sm`}
-                    placeholder={t('auth.phoneNumber')}
+                    placeholder={t("auth.phoneNumber")}
                     required
                   />
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700 ml-1">{t('auth.password')}</label>
+                <label className="block text-xs font-medium text-gray-700 ml-1">
+                  {t("auth.password")}
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -438,14 +515,20 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               {!isLogin && (
                 <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700 ml-1">{t('auth.confirmPassword')}</label>
+                  <label className="block text-xs font-medium text-gray-700 ml-1">
+                    {t("auth.confirmPassword")}
+                  </label>
                   <input
                     type="password"
                     name="confirmPassword"
@@ -473,7 +556,9 @@ export default function LoginPage() {
                   <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <span>{isLogin ? t('auth.login') : t('auth.register')}</span>
+                    <span>
+                      {isLogin ? t("auth.login") : t("auth.register")}
+                    </span>
                     <ChevronRight className="w-4 h-4" />
                   </>
                 )}
@@ -482,31 +567,49 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-600">
-                {isLogin ? t('auth.noAccount') : t('auth.haveAccount')}
+                {isLogin ? t("auth.noAccount") : t("auth.haveAccount")}
                 <button
                   onClick={() => {
                     setIsLogin(!isLogin);
-                    setError('');
+                    setError("");
                   }}
                   className={`ml-2 font-bold text-${themeColor}-600 hover:text-${themeColor}-700 underline decoration-2 underline-offset-4 transition-all`}
                 >
-                  {isLogin ? t('auth.registerNow') : t('auth.loginHere')}
+                  {isLogin ? t("auth.registerNow") : t("auth.loginHere")}
                 </button>
               </p>
             </div>
 
             {/* Demo Note - Styled */}
             <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-1">{t('auth.demoCredentials')}</p>
+              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-1">
+                {t("auth.demoCredentials")}
+              </p>
               <div className="flex flex-col space-y-1 text-[10px] text-gray-500">
-                <span>{t('auth.farmer')}: <span className="font-mono bg-gray-100 px-1 rounded">rajesh.farmer@agribridge.com</span> / <span className="font-mono bg-gray-100 px-1 rounded">farmer123</span></span>
-                <span>{t('auth.buyer')}: <span className="font-mono bg-gray-100 px-1 rounded">amit.buyer@agribridge.com</span> / <span className="font-mono bg-gray-100 px-1 rounded">buyer123</span></span>
+                <span>
+                  {t("auth.farmer")}:{" "}
+                  <span className="font-mono bg-gray-100 px-1 rounded">
+                    rajesh.farmer@kisaansaarthi.com
+                  </span>{" "}
+                  /{" "}
+                  <span className="font-mono bg-gray-100 px-1 rounded">
+                    farmer123
+                  </span>
+                </span>
+                <span>
+                  {t("auth.buyer")}:{" "}
+                  <span className="font-mono bg-gray-100 px-1 rounded">
+                    amit.buyer@kisaansaarthi.com
+                  </span>{" "}
+                  /{" "}
+                  <span className="font-mono bg-gray-100 px-1 rounded">
+                    buyer123
+                  </span>
+                </span>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
 
       {/* Footer */}
@@ -514,9 +617,11 @@ export default function LoginPage() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex justify-center items-center space-x-2 mb-4 text-gray-400">
             <Sprout className="w-5 h-5" />
-            <span className="font-semibold">{t('auth.appTitle')}</span>
+            <span className="font-semibold">{t("auth.appTitle")}</span>
           </div>
-          <p className="text-sm text-gray-500">© 2026 {t('auth.appTitle')}. {t('auth.allRightsReserved')}.</p>
+          <p className="text-sm text-gray-500">
+            © 2026 {t("auth.appTitle")}. {t("auth.allRightsReserved")}.
+          </p>
         </div>
       </footer>
     </div>

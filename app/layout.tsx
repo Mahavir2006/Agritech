@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ChatbotButton from "@/components/ChatbotButton";
 import VoiceControl from "@/components/VoiceControl";
+import BackButton from "@/components/BackButton";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { I18nProvider } from "@/lib/i18n/context";
 
@@ -17,22 +18,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgriBridge - Digital Marketplace for Farmers",
-  description: "Connecting farmers directly with buyers, retailers, and consumers",
+  title: "KisaanSaarthi - Digital Marketplace for Farmers",
+  description:
+    "Connecting farmers directly with buyers, retailers, and consumers",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "AgriBridge",
+    title: "KisaanSaarthi",
   },
   other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'AgriBridge',
-    'application-name': 'AgriBridge',
-    'msapplication-TileColor': '#16a34a',
-    'msapplication-config': '/browserconfig.xml',
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "KisaanSaarthi",
+    "application-name": "KisaanSaarthi",
+    "msapplication-TileColor": "#16a34a",
+    "msapplication-config": "/browserconfig.xml",
   },
 };
 
@@ -56,8 +58,11 @@ export default function RootLayout({
       >
         <I18nProvider>
           {children}
-          <ChatbotButton />
+          <div className="fixed bottom-4 right-4 z-40 md:static md:z-auto">
+            <ChatbotButton />
+          </div>
           <VoiceControl />
+          <BackButton />
           <PWAInstallPrompt />
         </I18nProvider>
       </body>

@@ -20,7 +20,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-white/50">
-            © 2024 AgriBridge. All rights reserved.
+            © 2024 KisaanSaarthi. All rights reserved.
           </div>
           <div className="flex gap-6">
             <Instagram className="h-5 w-5 text-white/70 hover:text-white cursor-pointer" />

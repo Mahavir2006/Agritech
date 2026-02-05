@@ -243,7 +243,6 @@ How can I help you today?`,
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-      alert("Voice recognition is not supported in your browser");
       return;
     }
   };

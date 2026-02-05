@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useI18n } from "@/lib/i18n/context";
 import {
@@ -87,9 +87,13 @@ interface CartItem {
 export default function WholesalerDashboard() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
+  const activeTab = searchParams.get("tab") || "dashboard";
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const setActiveTab = (tab: string) => {
+    router.push(`${pathname}?tab=${tab}`);
+  };
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1626,6 +1630,7 @@ export default function WholesalerDashboard() {
                 orders={orders}
                 userStats={userStats}
                 userLocation={userLocation}
+                onNavigate={setActiveTab}
               />
             )}
           </div>

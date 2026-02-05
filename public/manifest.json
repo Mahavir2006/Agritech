@@ -1,6 +1,6 @@
 {
-  "name": "AgriBridge - Digital Marketplace for Farmers",
-  "short_name": "AgriBridge",
+  "name": "KisaanSaarthi",
+  "short_name": "KisaanSaarthi",
   "description": "Connecting farmers directly with buyers, retailers, and consumers",
   "start_url": "/",
   "display": "standalone",
@@ -42,7 +42,7 @@
       "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
     },
     {
-      "name": "Buyer Dashboard", 
+      "name": "Buyer Dashboard",
       "short_name": "Buyer",
       "description": "Access buyer dashboard",
       "url": "/dashboard/buyer",

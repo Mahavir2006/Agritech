@@ -1,8 +1,8 @@
 import {
   PricePrediction,
   PricePredictionService,
-  CacheEntry
-} from '../types/market-data';
+  CacheEntry,
+} from "../types/market-data";
 
 export class MarketDataService implements PricePredictionService {
   private cache = new Map<string, CacheEntry>();
@@ -12,7 +12,7 @@ export class MarketDataService implements PricePredictionService {
    * Generate cache key for commodity and state
    */
   private generateCacheKey(commodity: string, state?: string): string {
-    return `price_prediction:${commodity.toLowerCase()}:${state?.toLowerCase() || 'all'}`;
+    return `price_prediction:${commodity.toLowerCase()}:${state?.toLowerCase() || "all"}`;
   }
 
   /**
@@ -29,7 +29,7 @@ export class MarketDataService implements PricePredictionService {
     const entry: CacheEntry = {
       data,
       timestamp: Date.now(),
-      expiresAt: Date.now() + this.CACHE_TTL
+      expiresAt: Date.now() + this.CACHE_TTL,
     };
     this.cache.set(key, entry);
   }
@@ -37,36 +37,39 @@ export class MarketDataService implements PricePredictionService {
   /**
    * Search for commodity prices with caching
    */
-  async searchCommodityPrices(productName: string, state?: string): Promise<PricePrediction | null> {
+  async searchCommodityPrices(
+    productName: string,
+    state?: string,
+  ): Promise<PricePrediction | null> {
     try {
-      console.log('Searching for commodity prices:', productName);
-      
+      // console.log('Searching for commodity prices:', productName);
+
       // Check cache first
       const cacheKey = this.generateCacheKey(productName, state);
       const cachedEntry = this.cache.get(cacheKey);
-      
+
       if (cachedEntry && this.isCacheValid(cachedEntry)) {
-        console.log('Returning cached result for:', productName);
+        // console.log('Returning cached result for:', productName);
         return cachedEntry.data;
       }
 
       // Build API request URL
       const params = new URLSearchParams({
-        productName: productName.trim()
+        productName: productName.trim(),
       });
 
       if (state) {
-        params.append('state', state);
+        params.append("state", state);
       }
 
-      console.log('Making API request for:', productName);
+      // console.log('Making API request for:', productName);
 
       // Make request to our API route
       const response = await fetch(`/api/market-data?${params.toString()}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/json'
-        }
+          Accept: "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -77,7 +80,7 @@ export class MarketDataService implements PricePredictionService {
       const data = await response.json();
       const prediction = data.prediction;
 
-      console.log('API response received:', prediction ? 'Data found' : 'No data');
+      // console.log('API response received:', prediction ? 'Data found' : 'No data');
 
       if (prediction) {
         // Cache the result
@@ -85,9 +88,8 @@ export class MarketDataService implements PricePredictionService {
       }
 
       return prediction;
-
     } catch (error) {
-      console.error('Price prediction error:', error);
+      console.error("Price prediction error:", error);
       // Return null for graceful degradation
       return null;
     }
