@@ -1,7 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Calendar, Users, Package, Clock, CheckCircle, XCircle, AlertCircle, Repeat, Settings, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  ShoppingCart,
+  Plus,
+  Calendar,
+  Users,
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Repeat,
+  Settings,
+  X,
+} from "lucide-react";
+import AlertModal from "./AlertModal";
 
 interface OrderRequest {
   id: number;
@@ -57,27 +71,45 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'requests' | 'schedules'>('requests');
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(
+    null,
+  );
+  const [activeTab, setActiveTab] = useState<"requests" | "schedules">(
+    "requests",
+  );
   const [formData, setFormData] = useState({
-    product_name: '',
-    quantity: '',
-    by_date: '',
+    product_name: "",
+    quantity: "",
+    by_date: "",
     allow_multiple_farmers: false,
-    description: '',
-    max_price_per_unit: ''
+    description: "",
+    max_price_per_unit: "",
   });
   const [scheduleFormData, setScheduleFormData] = useState({
-    product_name: '',
-    quantity: '',
+    product_name: "",
+    quantity: "",
     allow_multiple_farmers: false,
-    description: '',
-    max_price_per_unit: '',
-    schedule_type: 'monthly',
-    schedule_day: '',
-    days_before_needed: '7'
+    description: "",
+    max_price_per_unit: "",
+    schedule_type: "monthly",
+    schedule_day: "",
+    days_before_needed: "7",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   useEffect(() => {
     fetchOrderRequests();
@@ -89,14 +121,14 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       setLoading(true);
       const response = await fetch(`/api/order-requests?buyer_id=${userId}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setOrderRequests(data.orderRequests || []);
       } else {
-        console.error('Failed to fetch order requests:', data.error);
+        console.error("Failed to fetch order requests:", data.error);
       }
     } catch (error) {
-      console.error('Error fetching order requests:', error);
+      console.error("Error fetching order requests:", error);
     } finally {
       setLoading(false);
     }
@@ -106,14 +138,14 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
     try {
       const response = await fetch(`/api/order-schedules?buyer_id=${userId}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setOrderSchedules(data.schedules || []);
       } else {
-        console.error('Failed to fetch order schedules:', data.error);
+        console.error("Failed to fetch order schedules:", data.error);
       }
     } catch (error) {
-      console.error('Error fetching order schedules:', error);
+      console.error("Error fetching order schedules:", error);
     }
   };
 
@@ -123,10 +155,10 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/order-requests', {
-        method: 'POST',
+      const response = await fetch("/api/order-requests", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           buyer_id: userId,
@@ -135,30 +167,32 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           by_date: formData.by_date,
           allow_multiple_farmers: formData.allow_multiple_farmers,
           description: formData.description,
-          max_price_per_unit: formData.max_price_per_unit ? parseFloat(formData.max_price_per_unit) : null
-        })
+          max_price_per_unit: formData.max_price_per_unit
+            ? parseFloat(formData.max_price_per_unit)
+            : null,
+        }),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
-        alert('Order request created successfully!');
+        alert("Order request created successfully!");
         setShowCreateForm(false);
         setFormData({
-          product_name: '',
-          quantity: '',
-          by_date: '',
+          product_name: "",
+          quantity: "",
+          by_date: "",
           allow_multiple_farmers: false,
-          description: '',
-          max_price_per_unit: ''
+          description: "",
+          max_price_per_unit: "",
         });
         fetchOrderRequests();
       } else {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error creating order request:', error);
-      alert('Error creating order request. Please try again.');
+      console.error("Error creating order request:", error);
+      alert("Error creating order request. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -171,19 +205,23 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
     setSubmitting(true);
     try {
       const isEditing = editingScheduleId !== null;
-      const url = '/api/order-schedules';
-      const method = isEditing ? 'PUT' : 'POST';
-      
+      const url = "/api/order-schedules";
+      const method = isEditing ? "PUT" : "POST";
+
       const body: any = {
         buyer_id: userId,
         product_name: scheduleFormData.product_name,
         quantity: parseInt(scheduleFormData.quantity),
         allow_multiple_farmers: scheduleFormData.allow_multiple_farmers,
         description: scheduleFormData.description,
-        max_price_per_unit: scheduleFormData.max_price_per_unit ? parseFloat(scheduleFormData.max_price_per_unit) : null,
+        max_price_per_unit: scheduleFormData.max_price_per_unit
+          ? parseFloat(scheduleFormData.max_price_per_unit)
+          : null,
         schedule_type: scheduleFormData.schedule_type,
-        schedule_day: scheduleFormData.schedule_day ? parseInt(scheduleFormData.schedule_day) : null,
-        days_before_needed: parseInt(scheduleFormData.days_before_needed)
+        schedule_day: scheduleFormData.schedule_day
+          ? parseInt(scheduleFormData.schedule_day)
+          : null,
+        days_before_needed: parseInt(scheduleFormData.days_before_needed),
       };
 
       if (isEditing) {
@@ -193,64 +231,73 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
-        alert(`Order schedule ${isEditing ? 'updated' : 'created'} successfully!`);
+        showAlert(
+          `Order schedule ${isEditing ? "updated" : "created"} successfully!`,
+          "success",
+        );
         setShowScheduleForm(false);
         setEditingScheduleId(null);
         setScheduleFormData({
-          product_name: '',
-          quantity: '',
+          product_name: "",
+          quantity: "",
           allow_multiple_farmers: false,
-          description: '',
-          max_price_per_unit: '',
-          schedule_type: 'monthly',
-          schedule_day: '',
-          days_before_needed: '7'
+          description: "",
+          max_price_per_unit: "",
+          schedule_type: "monthly",
+          schedule_day: "",
+          days_before_needed: "7",
         });
         fetchOrderSchedules();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error('Error saving order schedule:', error);
-      alert('Error saving order schedule. Please try again.');
+      console.error("Error saving order schedule:", error);
+      showAlert("Error saving order schedule. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const toggleScheduleStatus = async (scheduleId: number, isActive: boolean) => {
+  const toggleScheduleStatus = async (
+    scheduleId: number,
+    isActive: boolean,
+  ) => {
     try {
-      const response = await fetch('/api/order-schedules', {
-        method: 'PUT',
+      const response = await fetch("/api/order-schedules", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           schedule_id: scheduleId,
           buyer_id: userId,
-          is_active: !isActive
-        })
+          is_active: !isActive,
+        }),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
-        alert(`Schedule ${!isActive ? 'activated' : 'paused'} successfully!`);
+        showAlert(
+          `Schedule ${!isActive ? "activated" : "paused"} successfully!`,
+          "success",
+        );
         fetchOrderSchedules();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error('Error updating schedule:', error);
-      alert('Error updating schedule. Please try again.');
+      console.error("Error updating schedule:", error);
+      showAlert("Error updating schedule. Please try again.", "error");
     }
   };
 
@@ -260,119 +307,133 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       product_name: schedule.product_name,
       quantity: schedule.quantity.toString(),
       allow_multiple_farmers: schedule.allow_multiple_farmers,
-      description: schedule.description || '',
-      max_price_per_unit: schedule.max_price_per_unit?.toString() || '',
+      description: schedule.description || "",
+      max_price_per_unit: schedule.max_price_per_unit?.toString() || "",
       schedule_type: schedule.schedule_type,
-      schedule_day: schedule.schedule_day?.toString() || '',
-      days_before_needed: schedule.days_before_needed.toString()
+      schedule_day: schedule.schedule_day?.toString() || "",
+      days_before_needed: schedule.days_before_needed.toString(),
     });
     setShowScheduleForm(true);
   };
 
   const handleProcessSchedules = async (force = false) => {
     if (submitting) return;
-    
+
     if (!force) {
       // Check if any schedules are actually due
-      const today = new Date().toISOString().split('T')[0];
-      const dueSchedules = orderSchedules.filter(s => s.is_active && s.next_execution_date <= today);
-      
+      const today = new Date().toISOString().split("T")[0];
+      const dueSchedules = orderSchedules.filter(
+        (s) => s.is_active && s.next_execution_date <= today,
+      );
+
       if (dueSchedules.length === 0) {
         const nextDueDate = orderSchedules
-          .filter(s => s.is_active)
-          .map(s => s.next_execution_date)
+          .filter((s) => s.is_active)
+          .map((s) => s.next_execution_date)
           .sort()[0];
-        
+
         if (nextDueDate) {
           const confirmForce = window.confirm(
-            `No schedules are due for processing right now.\n\nNext scheduled execution: ${formatDate(nextDueDate)}\n\nWould you like to FORCE PROCESS all active schedules for testing purposes?\n\n⚠️ This will create order requests immediately regardless of schedule dates.`
+            `No schedules are due for processing right now.\n\nNext scheduled execution: ${formatDate(nextDueDate)}\n\nWould you like to FORCE PROCESS all active schedules for testing purposes?\n\n⚠️ This will create order requests immediately regardless of schedule dates.`,
           );
-          
+
           if (confirmForce) {
             return handleProcessSchedules(true); // Recursive call with force=true
           }
         } else {
-          alert('No active schedules found.');
+          alert("No active schedules found.");
         }
         return;
       }
     }
-    
+
     setSubmitting(true);
     try {
-      const response = await fetch('/api/process-schedules', {
-        method: 'POST',
+      const response = await fetch("/api/process-schedules", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ force })
+        body: JSON.stringify({ force }),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         if (data.processed > 0) {
-          alert(`✅ Successfully processed ${data.processed} schedule(s)!\n\n${force ? '🔧 FORCE MODE: ' : ''}New order requests have been created and are now visible to farmers.`);
+          showAlert(
+            `✅ Successfully processed ${data.processed} schedule(s)!\n\n${force ? "🔧 FORCE MODE: " : ""}New order requests have been created and are now visible to farmers.`,
+            "success",
+          );
         } else {
-          alert(`ℹ️ ${data.message}\n\n${data.info || ''}`);
+          showAlert(`ℹ️ ${data.message}\n\n${data.info || ""}`, "info");
         }
         fetchOrderRequests();
         fetchOrderSchedules();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error('Error processing schedules:', error);
-      alert('Error processing schedules. Please try again.');
+      console.error("Error processing schedules:", error);
+      showAlert("Error processing schedules. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleApplicationAction = async (applicationId: number, status: string) => {
+  const handleApplicationAction = async (
+    applicationId: number,
+    status: string,
+  ) => {
     try {
-      const response = await fetch('/api/order-applications', {
-        method: 'PUT',
+      const response = await fetch("/api/order-applications", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           application_id: applicationId,
           status,
-          buyer_id: userId
-        })
+          buyer_id: userId,
+        }),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
-        alert(`Application ${status} successfully!`);
+        showAlert(`Application ${status} successfully!`, "success");
         fetchOrderRequests();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error('Error updating application:', error);
-      alert('Error updating application. Please try again.');
+      console.error("Error updating application:", error);
+      showAlert("Error updating application. Please try again.", "error");
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'accepted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "open":
+        return "bg-green-100 text-green-800";
+      case "closed":
+        return "bg-gray-100 text-gray-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "accepted":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -384,10 +445,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           <ShoppingCart className="w-6 h-6 text-green-600 mr-3" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Order Requests</h2>
-            <p className="text-gray-600 text-sm mt-1">Request specific produce from farmers</p>
+            <p className="text-gray-600 text-sm mt-1">
+              Request specific produce from farmers
+            </p>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <button
             onClick={() => setShowScheduleForm(true)}
@@ -409,22 +472,22 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       {/* Tabs */}
       <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
         <button
-          onClick={() => setActiveTab('requests')}
+          onClick={() => setActiveTab("requests")}
           className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-            activeTab === 'requests'
-              ? 'bg-white text-green-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            activeTab === "requests"
+              ? "bg-white text-green-600 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
           }`}
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
           Order Requests ({orderRequests.length})
         </button>
         <button
-          onClick={() => setActiveTab('schedules')}
+          onClick={() => setActiveTab("schedules")}
           className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-            activeTab === 'schedules'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            activeTab === "schedules"
+              ? "bg-white text-purple-600 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
           }`}
         >
           <Repeat className="w-4 h-4 mr-2" />
@@ -438,7 +501,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             {/* Header with close button */}
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Create Order Request</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                Create Order Request
+              </h3>
               <button
                 onClick={() => setShowCreateForm(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -446,7 +511,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -455,7 +520,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <input
                   type="text"
                   value={formData.product_name}
-                  onChange={(e) => setFormData({...formData, product_name: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, product_name: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500"
                   placeholder="e.g., Fresh Tomatoes"
                   required
@@ -469,7 +536,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <input
                   type="number"
                   value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quantity: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500"
                   placeholder="e.g., 100"
                   required
@@ -483,9 +552,11 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <input
                   type="date"
                   value={formData.by_date}
-                  onChange={(e) => setFormData({...formData, by_date: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, by_date: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500"
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().split("T")[0]}
                   required
                 />
               </div>
@@ -495,12 +566,19 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   Max Price per kg (Optional)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 font-medium">₹</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 font-medium">
+                    ₹
+                  </span>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.max_price_per_unit}
-                    onChange={(e) => setFormData({...formData, max_price_per_unit: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        max_price_per_unit: e.target.value,
+                      })
+                    }
                     className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                     placeholder="50.00"
                   />
@@ -512,10 +590,17 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   <input
                     type="checkbox"
                     checked={formData.allow_multiple_farmers}
-                    onChange={(e) => setFormData({...formData, allow_multiple_farmers: e.target.checked})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        allow_multiple_farmers: e.target.checked,
+                      })
+                    }
                     className="mr-2 rounded border-gray-300 text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-sm text-gray-700">Allow multiple farmers to apply</span>
+                  <span className="text-sm text-gray-700">
+                    Allow multiple farmers to apply
+                  </span>
                 </label>
               </div>
 
@@ -525,7 +610,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500 resize-none"
                   rows={3}
                   placeholder="Additional requirements or notes..."
@@ -545,7 +632,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   disabled={submitting}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? 'Creating...' : 'Create Request'}
+                  {submitting ? "Creating..." : "Create Request"}
                 </button>
               </div>
             </form>
@@ -561,7 +648,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-900">
                 <Repeat className="w-5 h-5 inline mr-2 text-purple-600" />
-                {editingScheduleId ? 'Edit Schedule' : 'Schedule Recurring Orders'}
+                {editingScheduleId
+                  ? "Edit Schedule"
+                  : "Schedule Recurring Orders"}
               </h3>
               <button
                 onClick={() => {
@@ -573,7 +662,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            
+
             <form onSubmit={handleScheduleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -582,7 +671,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <input
                   type="text"
                   value={scheduleFormData.product_name}
-                  onChange={(e) => setScheduleFormData({...scheduleFormData, product_name: e.target.value})}
+                  onChange={(e) =>
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      product_name: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   placeholder="e.g., Fresh Onions"
                   required
@@ -596,7 +690,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 <input
                   type="number"
                   value={scheduleFormData.quantity}
-                  onChange={(e) => setScheduleFormData({...scheduleFormData, quantity: e.target.value})}
+                  onChange={(e) =>
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      quantity: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   placeholder="e.g., 100"
                   required
@@ -609,7 +708,13 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 </label>
                 <select
                   value={scheduleFormData.schedule_type}
-                  onChange={(e) => setScheduleFormData({...scheduleFormData, schedule_type: e.target.value, schedule_day: ''})}
+                  onChange={(e) =>
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      schedule_type: e.target.value,
+                      schedule_day: "",
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   required
                 >
@@ -619,7 +724,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 </select>
               </div>
 
-              {scheduleFormData.schedule_type === 'monthly' && (
+              {scheduleFormData.schedule_type === "monthly" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Day of Month (1-31) *
@@ -629,7 +734,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                     min="1"
                     max="31"
                     value={scheduleFormData.schedule_day}
-                    onChange={(e) => setScheduleFormData({...scheduleFormData, schedule_day: e.target.value})}
+                    onChange={(e) =>
+                      setScheduleFormData({
+                        ...scheduleFormData,
+                        schedule_day: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                     placeholder="e.g., 5 (for 5th of every month)"
                     required
@@ -637,14 +747,19 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 </div>
               )}
 
-              {scheduleFormData.schedule_type === 'weekly' && (
+              {scheduleFormData.schedule_type === "weekly" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Day of Week *
                   </label>
                   <select
                     value={scheduleFormData.schedule_day}
-                    onChange={(e) => setScheduleFormData({...scheduleFormData, schedule_day: e.target.value})}
+                    onChange={(e) =>
+                      setScheduleFormData({
+                        ...scheduleFormData,
+                        schedule_day: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                     required
                   >
@@ -669,12 +784,19 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   min="1"
                   max="30"
                   value={scheduleFormData.days_before_needed}
-                  onChange={(e) => setScheduleFormData({...scheduleFormData, days_before_needed: e.target.value})}
+                  onChange={(e) =>
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      days_before_needed: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   placeholder="7"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">How many days before delivery to post the order request</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  How many days before delivery to post the order request
+                </p>
               </div>
 
               <div>
@@ -682,12 +804,19 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   Max Price per kg (Optional)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-600 font-medium">₹</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-600 font-medium">
+                    ₹
+                  </span>
                   <input
                     type="number"
                     step="0.01"
                     value={scheduleFormData.max_price_per_unit}
-                    onChange={(e) => setScheduleFormData({...scheduleFormData, max_price_per_unit: e.target.value})}
+                    onChange={(e) =>
+                      setScheduleFormData({
+                        ...scheduleFormData,
+                        max_price_per_unit: e.target.value,
+                      })
+                    }
                     className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                     placeholder="50.00"
                   />
@@ -699,10 +828,17 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   <input
                     type="checkbox"
                     checked={scheduleFormData.allow_multiple_farmers}
-                    onChange={(e) => setScheduleFormData({...scheduleFormData, allow_multiple_farmers: e.target.checked})}
+                    onChange={(e) =>
+                      setScheduleFormData({
+                        ...scheduleFormData,
+                        allow_multiple_farmers: e.target.checked,
+                      })
+                    }
                     className="mr-2 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                   />
-                  <span className="text-sm text-gray-700">Allow multiple farmers to apply</span>
+                  <span className="text-sm text-gray-700">
+                    Allow multiple farmers to apply
+                  </span>
                 </label>
               </div>
 
@@ -712,7 +848,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                 </label>
                 <textarea
                   value={scheduleFormData.description}
-                  onChange={(e) => setScheduleFormData({...scheduleFormData, description: e.target.value})}
+                  onChange={(e) =>
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      description: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
                   rows={3}
                   placeholder="Additional requirements or notes..."
@@ -735,7 +876,13 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   disabled={submitting}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? (editingScheduleId ? 'Updating...' : 'Creating...') : (editingScheduleId ? 'Update Schedule' : 'Create Schedule')}
+                  {submitting
+                    ? editingScheduleId
+                      ? "Updating..."
+                      : "Creating..."
+                    : editingScheduleId
+                      ? "Update Schedule"
+                      : "Create Schedule"}
                 </button>
               </div>
             </form>
@@ -744,7 +891,7 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       )}
 
       {/* Order Requests List */}
-      {activeTab === 'requests' && (
+      {activeTab === "requests" && (
         <>
           {loading ? (
             <div className="text-center py-8">
@@ -753,8 +900,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           ) : orderRequests.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Order Requests</h3>
-              <p className="text-gray-500 mb-4">Create your first order request to get started</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Order Requests
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Create your first order request to get started
+              </p>
               <button
                 onClick={() => setShowCreateForm(true)}
                 className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
@@ -765,11 +916,14 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           ) : (
             <div className="space-y-6">
               {orderRequests.map((request) => (
-                <div key={request.id} className={`border rounded-xl p-6 ${
-                  request.is_scheduled 
-                    ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-white' 
-                    : 'border-gray-200'
-                }`}>
+                <div
+                  key={request.id}
+                  className={`border rounded-xl p-6 ${
+                    request.is_scheduled
+                      ? "border-purple-200 bg-gradient-to-r from-purple-50 to-white"
+                      : "border-gray-200"
+                  }`}
+                >
                   {/* Scheduled Order Badge */}
                   {request.is_scheduled && (
                     <div className="flex items-center mb-3">
@@ -783,7 +937,9 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   {/* Request Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{request.product_name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {request.product_name}
+                      </h3>
                       <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                         <div className="flex items-center">
                           <Package className="w-4 h-4 mr-1" />
@@ -801,49 +957,69 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                         )}
                       </div>
                       {/* Fulfillment Status */}
-                      {request.order_applications && request.order_applications.length > 0 && (() => {
-                        const acceptedApps = request.order_applications.filter(app => app.status === 'accepted');
-                        const totalAccepted = acceptedApps.reduce((sum, app) => sum + app.available_quantity, 0);
-                        const remaining = Math.max(0, request.quantity - totalAccepted);
-                        
-                        if (totalAccepted > 0) {
-                          return (
-                            <div className="mt-2 text-sm">
-                              <div className="flex items-center gap-4">
-                                <span className="text-green-600 font-medium">
-                                  {totalAccepted} kg confirmed
-                                </span>
-                                {remaining > 0 && (
-                                  <span className="text-orange-600 font-medium">
-                                    {remaining} kg still needed
-                                  </span>
-                                )}
-                                {remaining === 0 && (
-                                  <span className="text-green-600 font-medium">
-                                    ✓ Fully fulfilled
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                      {request.order_applications &&
+                        request.order_applications.length > 0 &&
+                        (() => {
+                          const acceptedApps =
+                            request.order_applications.filter(
+                              (app) => app.status === "accepted",
+                            );
+                          const totalAccepted = acceptedApps.reduce(
+                            (sum, app) => sum + app.available_quantity,
+                            0,
                           );
-                        }
-                        return null;
-                      })()}
+                          const remaining = Math.max(
+                            0,
+                            request.quantity - totalAccepted,
+                          );
+
+                          if (totalAccepted > 0) {
+                            return (
+                              <div className="mt-2 text-sm">
+                                <div className="flex items-center gap-4">
+                                  <span className="text-green-600 font-medium">
+                                    {totalAccepted} kg confirmed
+                                  </span>
+                                  {remaining > 0 && (
+                                    <span className="text-orange-600 font-medium">
+                                      {remaining} kg still needed
+                                    </span>
+                                  )}
+                                  {remaining === 0 && (
+                                    <span className="text-green-600 font-medium">
+                                      ✓ Fully fulfilled
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
+                    >
+                      {request.status.charAt(0).toUpperCase() +
+                        request.status.slice(1)}
                     </span>
                   </div>
 
                   {/* Request Details */}
                   {request.description && (
-                    <p className="text-gray-700 text-sm mb-4">{request.description}</p>
+                    <p className="text-gray-700 text-sm mb-4">
+                      {request.description}
+                    </p>
                   )}
 
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-1" />
-                      <span>{request.allow_multiple_farmers ? 'Multiple farmers allowed' : 'Single farmer only'}</span>
+                      <span>
+                        {request.allow_multiple_farmers
+                          ? "Multiple farmers allowed"
+                          : "Single farmer only"}
+                      </span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
@@ -852,68 +1028,101 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                   </div>
 
                   {/* Applications */}
-                  {request.order_applications && request.order_applications.length > 0 && (
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium text-gray-900 mb-3">
-                        Applications ({request.order_applications.length})
-                      </h4>
-                      <div className="space-y-3">
-                        {request.order_applications.map((application) => (
-                          <div key={application.id} className="bg-gray-50 rounded-lg p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="font-medium text-gray-900">{application.users.name}</span>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
-                                    {application.status}
-                                  </span>
+                  {request.order_applications &&
+                    request.order_applications.length > 0 && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium text-gray-900 mb-3">
+                          Applications ({request.order_applications.length})
+                        </h4>
+                        <div className="space-y-3">
+                          {request.order_applications.map((application) => (
+                            <div
+                              key={application.id}
+                              className="bg-gray-50 rounded-lg p-4"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-medium text-gray-900">
+                                      {application.users.name}
+                                    </span>
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}
+                                    >
+                                      {application.status}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                    <div>
+                                      Price: ₹{application.price_per_unit}/kg
+                                    </div>
+                                    <div>
+                                      Can supply:{" "}
+                                      {application.available_quantity} kg
+                                    </div>
+                                    {application.delivery_date && (
+                                      <div>
+                                        Delivery:{" "}
+                                        {formatDate(application.delivery_date)}
+                                      </div>
+                                    )}
+                                    {application.notes && (
+                                      <div className="col-span-2">
+                                        Notes: {application.notes}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                                  <div>Price: ₹{application.price_per_unit}/kg</div>
-                                  <div>Can supply: {application.available_quantity} kg</div>
-                                  {application.delivery_date && (
-                                    <div>Delivery: {formatDate(application.delivery_date)}</div>
-                                  )}
-                                  {application.notes && (
-                                    <div className="col-span-2">Notes: {application.notes}</div>
-                                  )}
-                                </div>
+
+                                {application.status === "pending" && (
+                                  <div className="flex gap-2 ml-4">
+                                    <button
+                                      onClick={() =>
+                                        handleApplicationAction(
+                                          application.id,
+                                          "accepted",
+                                        )
+                                      }
+                                      className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                                      title="Accept"
+                                    >
+                                      <CheckCircle className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleApplicationAction(
+                                          application.id,
+                                          "rejected",
+                                        )
+                                      }
+                                      className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                      title="Reject"
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                              
-                              {application.status === 'pending' && (
-                                <div className="flex gap-2 ml-4">
-                                  <button
-                                    onClick={() => handleApplicationAction(application.id, 'accepted')}
-                                    className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                                    title="Accept"
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleApplicationAction(application.id, 'rejected')}
-                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                    title="Reject"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* No Applications */}
-                  {(!request.order_applications || request.order_applications.length === 0) && request.status === 'open' && (
-                    <div className="border-t pt-4">
-                      <div className="flex items-center text-gray-500 text-sm">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        <span>No applications yet. Farmers will be notified about your request.</span>
+                  {(!request.order_applications ||
+                    request.order_applications.length === 0) &&
+                    request.status === "open" && (
+                      <div className="border-t pt-4">
+                        <div className="flex items-center text-gray-500 text-sm">
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          <span>
+                            No applications yet. Farmers will be notified about
+                            your request.
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               ))}
             </div>
@@ -922,61 +1131,76 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
       )}
 
       {/* Order Schedules List */}
-      {activeTab === 'schedules' && (
+      {activeTab === "schedules" && (
         <>
           {/* Process Schedules Button */}
-          {orderSchedules.length > 0 && (() => {
-            const today = new Date().toISOString().split('T')[0];
-            const dueSchedules = orderSchedules.filter(s => s.is_active && s.next_execution_date <= today);
-            const activeSchedules = orderSchedules.filter(s => s.is_active);
-            const hasDueSchedules = dueSchedules.length > 0;
-            
-            return (
-              <div className={`mb-4 p-4 rounded-xl border ${
-                hasDueSchedules 
-                  ? 'bg-orange-50 border-orange-200' 
-                  : 'bg-blue-50 border-blue-200'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className={`font-medium ${hasDueSchedules ? 'text-orange-900' : 'text-blue-900'}`}>
-                      {hasDueSchedules ? `⚠️ ${dueSchedules.length} Schedule(s) Due for Processing` : 'Schedule Processing'}
-                    </h4>
-                    <p className={`text-sm mt-1 ${hasDueSchedules ? 'text-orange-700' : 'text-blue-700'}`}>
-                      {hasDueSchedules 
-                        ? 'Click to generate order requests from schedules that are due today'
-                        : `${activeSchedules.length} active schedule(s). Next due: ${activeSchedules.length > 0 ? formatDate(activeSchedules.map(s => s.next_execution_date).sort()[0]) : 'None'}`}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleProcessSchedules(false)}
-                      disabled={submitting}
-                      className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center ${
-                        hasDueSchedules 
-                          ? 'bg-orange-600 hover:bg-orange-700' 
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      {submitting ? 'Processing...' : (hasDueSchedules ? 'Process Now' : 'Check Status')}
-                    </button>
-                    {!hasDueSchedules && activeSchedules.length > 0 && (
-                      <button
-                        onClick={() => handleProcessSchedules(true)}
-                        disabled={submitting}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center"
-                        title="Force process all active schedules for testing"
+          {orderSchedules.length > 0 &&
+            (() => {
+              const today = new Date().toISOString().split("T")[0];
+              const dueSchedules = orderSchedules.filter(
+                (s) => s.is_active && s.next_execution_date <= today,
+              );
+              const activeSchedules = orderSchedules.filter((s) => s.is_active);
+              const hasDueSchedules = dueSchedules.length > 0;
+
+              return (
+                <div
+                  className={`mb-4 p-4 rounded-xl border ${
+                    hasDueSchedules
+                      ? "bg-orange-50 border-orange-200"
+                      : "bg-blue-50 border-blue-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4
+                        className={`font-medium ${hasDueSchedules ? "text-orange-900" : "text-blue-900"}`}
                       >
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Force Process
+                        {hasDueSchedules
+                          ? `⚠️ ${dueSchedules.length} Schedule(s) Due for Processing`
+                          : "Schedule Processing"}
+                      </h4>
+                      <p
+                        className={`text-sm mt-1 ${hasDueSchedules ? "text-orange-700" : "text-blue-700"}`}
+                      >
+                        {hasDueSchedules
+                          ? "Click to generate order requests from schedules that are due today"
+                          : `${activeSchedules.length} active schedule(s). Next due: ${activeSchedules.length > 0 ? formatDate(activeSchedules.map((s) => s.next_execution_date).sort()[0]) : "None"}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleProcessSchedules(false)}
+                        disabled={submitting}
+                        className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center ${
+                          hasDueSchedules
+                            ? "bg-orange-600 hover:bg-orange-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        {submitting
+                          ? "Processing..."
+                          : hasDueSchedules
+                            ? "Process Now"
+                            : "Check Status"}
                       </button>
-                    )}
+                      {!hasDueSchedules && activeSchedules.length > 0 && (
+                        <button
+                          onClick={() => handleProcessSchedules(true)}
+                          disabled={submitting}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center"
+                          title="Force process all active schedules for testing"
+                        >
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Force Process
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {loading ? (
             <div className="text-center py-8">
@@ -985,8 +1209,12 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           ) : orderSchedules.length === 0 ? (
             <div className="text-center py-12">
               <Repeat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Scheduled Orders</h3>
-              <p className="text-gray-500 mb-4">Create your first recurring order schedule</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Scheduled Orders
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Create your first recurring order schedule
+              </p>
               <button
                 onClick={() => setShowScheduleForm(true)}
                 className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
@@ -997,15 +1225,19 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
           ) : (
             <div className="space-y-6">
               {orderSchedules.map((schedule) => {
-                const today = new Date().toISOString().split('T')[0];
-                const isDue = schedule.is_active && schedule.next_execution_date <= today;
-                
+                const today = new Date().toISOString().split("T")[0];
+                const isDue =
+                  schedule.is_active && schedule.next_execution_date <= today;
+
                 return (
-                  <div key={schedule.id} className={`border rounded-xl p-6 ${
-                    isDue 
-                      ? 'border-orange-300 bg-gradient-to-r from-orange-50 to-white' 
-                      : 'border-purple-200 bg-gradient-to-r from-purple-50 to-white'
-                  }`}>
+                  <div
+                    key={schedule.id}
+                    className={`border rounded-xl p-6 ${
+                      isDue
+                        ? "border-orange-300 bg-gradient-to-r from-orange-50 to-white"
+                        : "border-purple-200 bg-gradient-to-r from-purple-50 to-white"
+                    }`}
+                  >
                     {/* Due Badge */}
                     {isDue && (
                       <div className="flex items-center mb-3">
@@ -1015,94 +1247,125 @@ export default function OrderRequests({ userId }: OrderRequestsProps) {
                         </span>
                       </div>
                     )}
-                    
+
                     {/* Schedule Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center mb-2">
                           <Repeat className="w-5 h-5 text-purple-600 mr-2" />
-                          <h3 className="text-lg font-semibold text-gray-900">{schedule.product_name}</h3>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {schedule.product_name}
+                          </h3>
                         </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Package className="w-4 h-4 mr-1" />
-                          <span>{schedule.quantity} kg</span>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <div className="flex items-center">
+                            <Package className="w-4 h-4 mr-1" />
+                            <span>{schedule.quantity} kg</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            <span>
+                              {schedule.schedule_type === "monthly" &&
+                                `Every ${schedule.schedule_day}th of month`}
+                              {schedule.schedule_type === "weekly" &&
+                                `Every ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][schedule.schedule_day || 0]}`}
+                              {schedule.schedule_type === "daily" && "Daily"}
+                            </span>
+                          </div>
+                          {schedule.max_price_per_unit && (
+                            <div className="flex items-center">
+                              <span className="text-purple-600 mr-1">₹</span>
+                              <span>Max ₹{schedule.max_price_per_unit}/kg</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
+                        <div className="mt-2 text-sm text-gray-600">
                           <span>
-                            {schedule.schedule_type === 'monthly' && `Every ${schedule.schedule_day}th of month`}
-                            {schedule.schedule_type === 'weekly' && `Every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][schedule.schedule_day || 0]}`}
-                            {schedule.schedule_type === 'daily' && 'Daily'}
+                            Next order:{" "}
+                            {formatDate(schedule.next_execution_date)}
+                          </span>
+                          <span className="mx-2">•</span>
+                          <span>
+                            Posts {schedule.days_before_needed} days before
+                            needed
                           </span>
                         </div>
-                        {schedule.max_price_per_unit && (
-                          <div className="flex items-center">
-                            <span className="text-purple-600 mr-1">₹</span>
-                            <span>Max ₹{schedule.max_price_per_unit}/kg</span>
-                          </div>
-                        )}
                       </div>
-                      <div className="mt-2 text-sm text-gray-600">
-                        <span>Next order: {formatDate(schedule.next_execution_date)}</span>
-                        <span className="mx-2">•</span>
-                        <span>Posts {schedule.days_before_needed} days before needed</span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            schedule.is_active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {schedule.is_active ? "Active" : "Paused"}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        schedule.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {schedule.is_active ? 'Active' : 'Paused'}
-                      </span>
+
+                    {/* Schedule Details */}
+                    {schedule.description && (
+                      <p className="text-gray-700 text-sm mb-4">
+                        {schedule.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-1" />
+                        <span>
+                          {schedule.allow_multiple_farmers
+                            ? "Multiple farmers allowed"
+                            : "Single farmer only"}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        <span>Created {formatDate(schedule.created_at)}</span>
+                      </div>
+                    </div>
+
+                    {/* Schedule Actions */}
+                    <div className="flex gap-2 pt-4 border-t">
+                      <button
+                        onClick={() =>
+                          toggleScheduleStatus(schedule.id, schedule.is_active)
+                        }
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          schedule.is_active
+                            ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                        }`}
+                      >
+                        {schedule.is_active
+                          ? "Pause Schedule"
+                          : "Activate Schedule"}
+                      </button>
+                      <button
+                        onClick={() => handleEditSchedule(schedule)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 inline mr-1" />
+                        Edit Schedule
+                      </button>
                     </div>
                   </div>
-
-                  {/* Schedule Details */}
-                  {schedule.description && (
-                    <p className="text-gray-700 text-sm mb-4">{schedule.description}</p>
-                  )}
-
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                    <div className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
-                      <span>{schedule.allow_multiple_farmers ? 'Multiple farmers allowed' : 'Single farmer only'}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>Created {formatDate(schedule.created_at)}</span>
-                    </div>
-                  </div>
-
-                  {/* Schedule Actions */}
-                  <div className="flex gap-2 pt-4 border-t">
-                    <button
-                      onClick={() => toggleScheduleStatus(schedule.id, schedule.is_active)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        schedule.is_active
-                          ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                      }`}
-                    >
-                      {schedule.is_active ? 'Pause Schedule' : 'Activate Schedule'}
-                    </button>
-                    <button 
-                      onClick={() => handleEditSchedule(schedule)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-                    >
-                      <Settings className="w-4 h-4 inline mr-1" />
-                      Edit Schedule
-                    </button>
-                  </div>
-                </div>
-              );
+                );
               })}
             </div>
           )}
         </>
       )}
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="buyer"
+        type={alertInfo.type}
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { X, Camera } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { X, Camera } from "lucide-react";
+import AlertModal from "./AlertModal";
 
 interface PhotoUploadProps {
   onPhotosChange: (photos: File[]) => void;
@@ -12,28 +13,46 @@ interface PhotoUploadProps {
   productId?: number;
 }
 
-export default function PhotoUpload({ 
-  onPhotosChange, 
+export default function PhotoUpload({
+  onPhotosChange,
   onUploadComplete,
-  maxPhotos = 5, 
+  maxPhotos = 5,
   existingPhotos = [],
   userId,
-  productId
+  productId,
 }: PhotoUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [location, setLocation] = useState<{latitude: number, longitude: number, address?: string} | null>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+  } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   // Upload files to Supabase storage
   const uploadFiles = async (files: File[]) => {
     if (!userId || !productId) {
-      console.error('userId and productId are required for upload');
+      console.error("userId and productId are required for upload");
       return;
     }
 
@@ -43,31 +62,30 @@ export default function PhotoUpload({
     try {
       for (const file of files) {
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('userId', userId.toString());
-        formData.append('productId', productId.toString());
+        formData.append("file", file);
+        formData.append("userId", userId.toString());
+        formData.append("productId", productId.toString());
 
-        const response = await fetch('/api/upload-photo', {
-          method: 'POST',
-          body: formData
+        const response = await fetch("/api/upload-photo", {
+          method: "POST",
+          body: formData,
         });
 
         if (response.ok) {
           const result = await response.json();
           uploadedUrls.push(result.url);
         } else {
-          console.error('Failed to upload file:', file.name);
-          alert(`Failed to upload ${file.name}`);
+          console.error("Failed to upload file:", file.name);
+          showAlert(`Failed to upload ${file.name}`, "error");
         }
       }
 
       if (uploadedUrls.length > 0 && onUploadComplete) {
         onUploadComplete(uploadedUrls);
       }
-
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('Error uploading photos. Please try again.');
+      console.error("Upload error:", error);
+      showAlert("Error uploading photos. Please try again.", "error");
     } finally {
       setUploading(false);
     }
@@ -81,39 +99,41 @@ export default function PhotoUpload({
         async (position) => {
           const coords = {
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
           };
-          
+
           // Get address from coordinates using reverse geocoding
           try {
             const response = await fetch(
-              `https://api.opencagedata.com/geocode/v1/json?q=${coords.latitude}+${coords.longitude}&key=YOUR_API_KEY&limit=1`
+              `https://api.opencagedata.com/geocode/v1/json?q=${coords.latitude}+${coords.longitude}&key=YOUR_API_KEY&limit=1`,
             );
-            
+
             // Fallback to a free service if OpenCage is not available
             const fallbackResponse = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`,
             );
-            
+
             if (fallbackResponse.ok) {
               const data = await fallbackResponse.json();
-              const address = data.display_name || `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
+              const address =
+                data.display_name ||
+                `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
               setLocation({ ...coords, address });
             } else {
               setLocation(coords);
             }
           } catch (error) {
-            console.warn('Geocoding error:', error);
+            console.warn("Geocoding error:", error);
             setLocation(coords);
           } finally {
             setLocationLoading(false);
           }
         },
         (error) => {
-          console.warn('Geolocation error:', error);
+          console.warn("Geolocation error:", error);
           setLocationLoading(false);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
       );
     }
   }, []);
@@ -122,7 +142,7 @@ export default function PhotoUpload({
   useEffect(() => {
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, [stream]);
@@ -132,43 +152,45 @@ export default function PhotoUpload({
     if (stream && videoRef.current && isCameraOpen) {
       const video = videoRef.current;
       video.srcObject = stream;
-      
+
       const handleLoadedMetadata = () => {
-        video.play().catch(error => {
-          console.error('Error playing video:', error);
+        video.play().catch((error) => {
+          console.error("Error playing video:", error);
         });
       };
-      
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
-      
+
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
+
       return () => {
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       };
     }
   }, [stream, isCameraOpen]);
 
   const openCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment', // Use back camera if available
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment", // Use back camera if available
           width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
-        } 
+          height: { ideal: 720, min: 480 },
+        },
       });
-      
+
       setStream(mediaStream);
       setIsCameraOpen(true);
-      
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please check permissions and try again.');
+      console.error("Error accessing camera:", error);
+      showAlert(
+        "Unable to access camera. Please check permissions and try again.",
+        "error",
+      );
     }
   };
 
   const closeCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
     setIsCameraOpen(false);
@@ -176,16 +198,16 @@ export default function PhotoUpload({
 
   const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) {
-      alert('Camera not ready. Please try again.');
+      showAlert("Camera not ready. Please try again.", "warning");
       return;
     }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
 
     if (!context) {
-      alert('Unable to capture photo. Please try again.');
+      showAlert("Unable to capture photo. Please try again.", "error");
       return;
     }
 
@@ -199,29 +221,34 @@ export default function PhotoUpload({
     // Add geolocation overlay if available
     if (location) {
       const overlayHeight = location.address ? 100 : 60;
-      context.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      context.fillRect(10, canvas.height - overlayHeight - 10, canvas.width - 20, overlayHeight);
-      
-      context.fillStyle = 'white';
-      context.font = 'bold 18px Arial';
-      context.fillText('📍 Location:', 20, canvas.height - overlayHeight + 25);
-      
+      context.fillStyle = "rgba(0, 0, 0, 0.8)";
+      context.fillRect(
+        10,
+        canvas.height - overlayHeight - 10,
+        canvas.width - 20,
+        overlayHeight,
+      );
+
+      context.fillStyle = "white";
+      context.font = "bold 18px Arial";
+      context.fillText("📍 Location:", 20, canvas.height - overlayHeight + 25);
+
       if (location.address) {
-        context.font = '14px Arial';
+        context.font = "14px Arial";
         // Wrap long addresses
         const maxWidth = canvas.width - 40;
-        const words = location.address.split(' ');
-        let line = '';
+        const words = location.address.split(" ");
+        let line = "";
         let y = canvas.height - overlayHeight + 50;
-        
+
         for (let n = 0; n < words.length; n++) {
-          const testLine = line + words[n] + ' ';
+          const testLine = line + words[n] + " ";
           const metrics = context.measureText(testLine);
           const testWidth = metrics.width;
-          
+
           if (testWidth > maxWidth && n > 0) {
             context.fillText(line, 20, y);
-            line = words[n] + ' ';
+            line = words[n] + " ";
             y += 18;
           } else {
             line = testLine;
@@ -229,68 +256,79 @@ export default function PhotoUpload({
         }
         context.fillText(line, 20, y);
       } else {
-        context.font = '14px Arial';
-        context.fillText(`${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`, 20, canvas.height - overlayHeight + 50);
+        context.font = "14px Arial";
+        context.fillText(
+          `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`,
+          20,
+          canvas.height - overlayHeight + 50,
+        );
       }
     }
 
     // Convert canvas to blob
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        alert('Failed to capture photo. Please try again.');
-        return;
-      }
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          showAlert("Failed to capture photo. Please try again.", "error");
+          return;
+        }
 
-      // Create file with geolocation metadata
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `camera-capture-${timestamp}.jpg`;
-      
-      // Create a new File object with metadata
-      const file = new File([blob], fileName, { 
-        type: 'image/jpeg',
-        lastModified: Date.now()
-      });
+        // Create file with geolocation metadata
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const fileName = `camera-capture-${timestamp}.jpg`;
 
-      // Add geolocation as custom property (for reference)
-      if (location) {
-        (file as any).geolocation = location;
-        (file as any).locationAddress = location.address;
-      }
+        // Create a new File object with metadata
+        const file = new File([blob], fileName, {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
 
-      const totalFiles = selectedFiles.length + 1;
-      if (totalFiles > maxPhotos) {
-        alert(`You can only upload up to ${maxPhotos} photos`);
-        return;
-      }
+        // Add geolocation as custom property (for reference)
+        if (location) {
+          (file as any).geolocation = location;
+          (file as any).locationAddress = location.address;
+        }
 
-      // Create preview
-      const preview = URL.createObjectURL(file);
-      setPreviews(prev => [...prev, preview]);
+        const totalFiles = selectedFiles.length + 1;
+        if (totalFiles > maxPhotos) {
+          showAlert(`You can only upload up to ${maxPhotos} photos`, "warning");
+          return;
+        }
 
-      // Close camera after capture
-      closeCamera();
+        // Create preview
+        const preview = URL.createObjectURL(file);
+        setPreviews((prev) => [...prev, preview]);
 
-      // Upload immediately if userId and productId are provided
-      if (userId && productId) {
-        await uploadFiles([file]);
-        alert('Photo captured and uploaded successfully!');
-      } else {
-        // Store locally if no upload info
-        const updatedFiles = [...selectedFiles, file];
-        setSelectedFiles(updatedFiles);
-        onPhotosChange(updatedFiles);
-        alert('Photo captured successfully! It will be uploaded with your product.');
-      }
-    }, 'image/jpeg', 0.9);
+        // Close camera after capture
+        closeCamera();
+
+        // Upload immediately if userId and productId are provided
+        if (userId && productId) {
+          await uploadFiles([file]);
+          showAlert("Photo captured and uploaded successfully!", "success");
+        } else {
+          // Store locally if no upload info
+          const updatedFiles = [...selectedFiles, file];
+          setSelectedFiles(updatedFiles);
+          onPhotosChange(updatedFiles);
+          showAlert(
+            "Photo captured successfully! It will be uploaded with your product.",
+            "success",
+          );
+        }
+      },
+      "image/jpeg",
+      0.9,
+    );
   };
 
   const removePhoto = (index: number) => {
     const updatedFiles = selectedFiles.filter((_, i) => i !== index);
     const updatedPreviews = previews.filter((_, i) => i !== index);
-    
+
     // Revoke object URL to prevent memory leaks
     URL.revokeObjectURL(previews[index]);
-    
+
     setSelectedFiles(updatedFiles);
     setPreviews(updatedPreviews);
     onPhotosChange(updatedFiles);
@@ -325,7 +363,7 @@ export default function PhotoUpload({
             muted
             className="w-full h-full object-cover"
           />
-          
+
           {/* Loading indicator */}
           {!stream && (
             <div className="absolute inset-0 flex items-center justify-center bg-black z-30">
@@ -335,7 +373,7 @@ export default function PhotoUpload({
               </div>
             </div>
           )}
-          
+
           {/* Location Overlay */}
           {location && (
             <div className="absolute top-20 left-4 right-4 bg-black bg-opacity-80 text-white px-4 py-3 rounded-lg z-30">
@@ -346,14 +384,17 @@ export default function PhotoUpload({
                     <span className="text-sm">Getting location...</span>
                   ) : location.address ? (
                     <div>
-                      <div className="text-sm font-medium">Current Location:</div>
+                      <div className="text-sm font-medium">
+                        Current Location:
+                      </div>
                       <div className="text-xs text-gray-300 mt-1 leading-relaxed">
                         {location.address}
                       </div>
                     </div>
                   ) : (
                     <div className="text-sm">
-                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                      {location.latitude.toFixed(6)},{" "}
+                      {location.longitude.toFixed(6)}
                     </div>
                   )}
                 </div>
@@ -371,9 +412,10 @@ export default function PhotoUpload({
                 capturePhoto();
               }}
               className="w-20 h-20 bg-white rounded-full shadow-2xl border-4 border-white hover:border-green-400 active:scale-95 transition-all duration-200 flex items-center justify-center"
-              style={{ 
-                boxShadow: '0 0 30px rgba(255,255,255,0.8), 0 0 60px rgba(255,255,255,0.4)',
-                zIndex: 9999
+              style={{
+                boxShadow:
+                  "0 0 30px rgba(255,255,255,0.8), 0 0 60px rgba(255,255,255,0.4)",
+                zIndex: 9999,
               }}
             >
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
@@ -416,7 +458,7 @@ export default function PhotoUpload({
             </p>
             {location && !locationLoading ? (
               <p className="text-xs text-green-600 mt-2">
-                📍 {location.address ? 'Address found' : 'Location enabled'}
+                📍 {location.address ? "Address found" : "Location enabled"}
               </p>
             ) : locationLoading ? (
               <p className="text-xs text-yellow-600 mt-2">
@@ -438,12 +480,16 @@ export default function PhotoUpload({
       {/* Photo Previews */}
       {previews.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Photos ({previews.length})</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Selected Photos ({previews.length})
+          </h4>
           {uploading && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                <p className="text-sm text-blue-700 font-medium">Uploading photos...</p>
+                <p className="text-sm text-blue-700 font-medium">
+                  Uploading photos...
+                </p>
               </div>
             </div>
           )}
@@ -468,12 +514,18 @@ export default function PhotoUpload({
                   <X className="w-4 h-4" />
                 </button>
                 <div className="absolute bottom-1 left-1 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-                  <div>{selectedFiles[index] ? (selectedFiles[index].size / 1024 / 1024).toFixed(1) + 'MB' : 'Uploaded'}</div>
-                  {selectedFiles[index] && (selectedFiles[index] as any).geolocation && (
-                    <div className="text-green-400 flex items-center">
-                      📍 <span className="ml-1">Located</span>
-                    </div>
-                  )}
+                  <div>
+                    {selectedFiles[index]
+                      ? (selectedFiles[index].size / 1024 / 1024).toFixed(1) +
+                        "MB"
+                      : "Uploaded"}
+                  </div>
+                  {selectedFiles[index] &&
+                    (selectedFiles[index] as any).geolocation && (
+                      <div className="text-green-400 flex items-center">
+                        📍 <span className="ml-1">Located</span>
+                      </div>
+                    )}
                 </div>
                 {/* Photo type indicator */}
                 <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
@@ -491,14 +543,16 @@ export default function PhotoUpload({
           {!uploading && previews.length > 0 && userId && productId && (
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-700 font-medium">
-                ✓ {previews.length} photo{previews.length > 1 ? 's' : ''} uploaded successfully
+                ✓ {previews.length} photo{previews.length > 1 ? "s" : ""}{" "}
+                uploaded successfully
               </p>
             </div>
           )}
           {!uploading && previews.length > 0 && (!userId || !productId) && (
             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-700 font-medium">
-                ⏳ {previews.length} photo{previews.length > 1 ? 's' : ''} ready to upload with product
+                ⏳ {previews.length} photo{previews.length > 1 ? "s" : ""} ready
+                to upload with product
               </p>
               <p className="text-xs text-yellow-600 mt-1">
                 Photos will be automatically uploaded when you submit the form
@@ -513,7 +567,9 @@ export default function PhotoUpload({
       {/* Existing Photos */}
       {existingPhotos.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Current Photos</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Current Photos
+          </h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {existingPhotos.map((photo, index) => (
               <div key={index} className="relative">
@@ -527,6 +583,15 @@ export default function PhotoUpload({
           </div>
         </div>
       )}
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="farmer"
+        type={alertInfo.type}
+      />
     </div>
   );
 }

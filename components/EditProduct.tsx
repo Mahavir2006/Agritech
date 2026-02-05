@@ -1,9 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { X, Save, Trash2, ImageIcon, Plus, Tag, Calculator, MapPin } from 'lucide-react';
-import PhotoUpload from './PhotoUpload';
-import { supabaseClient } from '@/lib/supabase';
+import { useState, useEffect } from "react";
+import {
+  X,
+  Save,
+  Trash2,
+  ImageIcon,
+  Plus,
+  Tag,
+  Calculator,
+  MapPin,
+} from "lucide-react";
+import PhotoUpload from "./PhotoUpload";
+import AlertModal from "./AlertModal";
+import { supabaseClient } from "@/lib/supabase";
 
 interface Product {
   id: number;
@@ -29,13 +39,13 @@ interface EditProductProps {
   userId: number;
 }
 
-export default function EditProduct({ 
-  product, 
-  isOpen, 
-  onClose, 
-  onSave, 
-  onDelete, 
-  userId 
+export default function EditProduct({
+  product,
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  userId,
 }: EditProductProps) {
   const [formData, setFormData] = useState({
     name: product.name,
@@ -45,12 +55,26 @@ export default function EditProduct({
     price_multiple: product.price_multiple,
     location: product.location,
     description: product.description,
-    status: product.status
+    status: product.status,
   });
   const [photos, setPhotos] = useState<string[]>(product.photos || []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   useEffect(() => {
     if (product) {
@@ -62,7 +86,7 @@ export default function EditProduct({
         price_multiple: product.price_multiple,
         location: product.location,
         description: product.description,
-        status: product.status
+        status: product.status,
       });
       setPhotos(product.photos || []);
     }
@@ -70,87 +94,95 @@ export default function EditProduct({
 
   if (!isOpen) return null;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'quantity' 
-        ? parseInt(value) || 0 
-        : name === 'price_single' || name === 'price_multiple'
-        ? parseFloat(value) || 0 
-        : value
+      [name]:
+        name === "quantity"
+          ? parseInt(value) || 0
+          : name === "price_single" || name === "price_multiple"
+            ? parseFloat(value) || 0
+            : value,
     }));
   };
 
   const handleDeletePhoto = async (photoUrl: string, index: number) => {
     try {
       // Extract file path from URL
-      const urlParts = photoUrl.split('/');
+      const urlParts = photoUrl.split("/");
       const fileName = urlParts[urlParts.length - 1];
       const filePath = `${userId}/${product.id}/${fileName}`;
 
       // Delete from Supabase Storage
       const { error } = await supabaseClient.storage
-        .from('Products')
+        .from("Products")
         .remove([filePath]);
 
       if (error) {
-        console.error('Error deleting photo:', error);
+        console.error("Error deleting photo:", error);
       }
 
       // Remove from local state
       const updatedPhotos = photos.filter((_, i) => i !== index);
       setPhotos(updatedPhotos);
     } catch (error) {
-      console.error('Error deleting photo:', error);
+      console.error("Error deleting photo:", error);
     }
   };
 
   const handlePhotosUploaded = (newPhotoUrls: string[]) => {
-    setPhotos(prev => [...prev, ...newPhotoUrls]);
+    setPhotos((prev) => [...prev, ...newPhotoUrls]);
     setSelectedFiles([]);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      console.log('Product object:', product);
-      console.log('Product ID:', product.id);
-      console.log('Product ID type:', typeof product.id);
-      console.log('Update data:', { ...formData, photos });
-      
+      console.log("Product object:", product);
+      console.log("Product ID:", product.id);
+      console.log("Product ID type:", typeof product.id);
+      console.log("Update data:", { ...formData, photos });
+
       const url = `/api/products/${product.id}`;
-      console.log('Request URL:', url);
-      
+      console.log("Request URL:", url);
+
       const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          photos
-        })
+          photos,
+        }),
       });
 
-      console.log('Response status:', response.status);
+      console.log("Response status:", response.status);
       const result = await response.json();
-      console.log('Response data:', result);
+      console.log("Response data:", result);
 
       if (response.ok && result.success) {
         // Add seller info back to the product for display
         const updatedProduct = {
           ...result.product,
-          seller_name: product.seller_name
+          seller_name: product.seller_name,
         };
         onSave(updatedProduct);
         onClose();
-        alert('Product updated successfully!');
+        showAlert("Product updated successfully!", "success");
       } else {
-        console.error('Failed to update product:', result);
-        alert(`Failed to update product: ${result.error || 'Unknown error'}`);
+        console.error("Failed to update product:", result);
+        showAlert(
+          `Failed to update product: ${result.error || "Unknown error"}`,
+          "error",
+        );
       }
     } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Error updating product. Please try again.');
+      console.error("Error updating product:", error);
+      showAlert("Error updating product. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -159,51 +191,54 @@ export default function EditProduct({
   const handleDelete = async () => {
     setSaving(true);
     try {
-      console.log('Delete - Product object:', product);
-      console.log('Delete - Product ID:', product.id);
-      console.log('Delete - Product ID type:', typeof product.id);
-      
+      console.log("Delete - Product object:", product);
+      console.log("Delete - Product ID:", product.id);
+      console.log("Delete - Product ID type:", typeof product.id);
+
       // Delete all photos from storage first
       if (photos.length > 0) {
-        console.log('Deleting photos from storage...');
-        const filePaths = photos.map(photoUrl => {
-          const urlParts = photoUrl.split('/');
+        console.log("Deleting photos from storage...");
+        const filePaths = photos.map((photoUrl) => {
+          const urlParts = photoUrl.split("/");
           const fileName = urlParts[urlParts.length - 1];
           return `${userId}/${product.id}/${fileName}`;
         });
 
         const { error: storageError } = await supabaseClient.storage
-          .from('Products')
+          .from("Products")
           .remove(filePaths);
 
         if (storageError) {
-          console.error('Error deleting photos from storage:', storageError);
+          console.error("Error deleting photos from storage:", storageError);
         }
       }
 
       // Delete product from database
       const url = `/api/products/${product.id}`;
-      console.log('Delete request URL:', url);
-      
+      console.log("Delete request URL:", url);
+
       const response = await fetch(url, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
-      console.log('Delete response status:', response.status);
+      console.log("Delete response status:", response.status);
       const result = await response.json();
-      console.log('Delete response data:', result);
+      console.log("Delete response data:", result);
 
       if (response.ok && result.success) {
         onDelete(product.id);
         onClose();
-        alert('Product deleted successfully!');
+        showAlert("Product deleted successfully!", "success");
       } else {
-        console.error('Failed to delete product:', result);
-        alert(`Failed to delete product: ${result.error || 'Unknown error'}`);
+        console.error("Failed to delete product:", result);
+        showAlert(
+          `Failed to delete product: ${result.error || "Unknown error"}`,
+          "error",
+        );
       }
     } catch (error) {
-      console.error('Error deleting product:', error);
-      alert('Error deleting product. Please try again.');
+      console.error("Error deleting product:", error);
+      showAlert("Error deleting product. Please try again.", "error");
     } finally {
       setSaving(false);
       setShowDeleteConfirm(false);
@@ -245,8 +280,8 @@ export default function EditProduct({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Category
               </label>
-              <select 
-                name="category" 
+              <select
+                name="category"
                 value={formData.category}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900"
@@ -276,8 +311,8 @@ export default function EditProduct({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
               </label>
-              <select 
-                name="status" 
+              <select
+                name="status"
                 value={formData.status}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900"
@@ -400,9 +435,9 @@ export default function EditProduct({
               className="flex-1 flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+              <span>{loading ? "Saving..." : "Save Changes"}</span>
             </button>
-            
+
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center justify-center space-x-2 bg-red-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-red-700 transition-colors"
@@ -410,7 +445,7 @@ export default function EditProduct({
               <Trash2 className="w-5 h-5" />
               <span>Delete Product</span>
             </button>
-            
+
             <button
               onClick={onClose}
               className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition-colors"
@@ -438,7 +473,8 @@ export default function EditProduct({
               </button>
             </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{product.name}"? This action cannot be undone and will also delete all associated photos.
+              Are you sure you want to delete "{product.name}"? This action
+              cannot be undone and will also delete all associated photos.
             </p>
             <div className="flex gap-4">
               <button
@@ -446,7 +482,7 @@ export default function EditProduct({
                 disabled={loading}
                 className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Deleting...' : 'Delete'}
+                {loading ? "Deleting..." : "Delete"}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -458,6 +494,16 @@ export default function EditProduct({
           </div>
         </div>
       )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="farmer"
+        type={alertInfo.type}
+      />
     </div>
   );
 }

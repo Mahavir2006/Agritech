@@ -1,7 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Bell, Package, Calendar, Users, Send, AlertCircle, CheckCircle, Clock, Repeat, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  Bell,
+  Package,
+  Calendar,
+  Users,
+  Send,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Repeat,
+  X,
+} from "lucide-react";
+import AlertModal from "./AlertModal";
 
 interface OrderRequest {
   id: number;
@@ -32,17 +44,35 @@ interface FarmerOrderRequestsProps {
   userId: number;
 }
 
-export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps) {
+export default function FarmerOrderRequests({
+  userId,
+}: FarmerOrderRequestsProps) {
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showApplicationForm, setShowApplicationForm] = useState<number | null>(null);
+  const [showApplicationForm, setShowApplicationForm] = useState<number | null>(
+    null,
+  );
   const [applicationData, setApplicationData] = useState({
-    price_per_unit: '',
-    available_quantity: '',
-    delivery_date: '',
-    notes: ''
+    price_per_unit: "",
+    available_quantity: "",
+    delivery_date: "",
+    notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   useEffect(() => {
     fetchOrderRequests();
@@ -53,29 +83,32 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
       setLoading(true);
       const response = await fetch(`/api/order-requests?farmer_id=${userId}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setOrderRequests(data.orderRequests || []);
       } else {
-        console.error('Failed to fetch order requests:', data.error);
+        console.error("Failed to fetch order requests:", data.error);
       }
     } catch (error) {
-      console.error('Error fetching order requests:', error);
+      console.error("Error fetching order requests:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApplicationSubmit = async (e: React.FormEvent, orderRequestId: number) => {
+  const handleApplicationSubmit = async (
+    e: React.FormEvent,
+    orderRequestId: number,
+  ) => {
     e.preventDefault();
     if (submitting) return;
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/order-applications', {
-        method: 'POST',
+      const response = await fetch("/api/order-applications", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           order_request_id: orderRequestId,
@@ -83,63 +116,73 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
           price_per_unit: parseFloat(applicationData.price_per_unit),
           available_quantity: parseInt(applicationData.available_quantity),
           delivery_date: applicationData.delivery_date || null,
-          notes: applicationData.notes
-        })
+          notes: applicationData.notes,
+        }),
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
-        alert('Application submitted successfully!');
+        showAlert("Application submitted successfully!", "success");
         setShowApplicationForm(null);
         setApplicationData({
-          price_per_unit: '',
-          available_quantity: '',
-          delivery_date: '',
-          notes: ''
+          price_per_unit: "",
+          available_quantity: "",
+          delivery_date: "",
+          notes: "",
         });
         fetchOrderRequests();
       } else {
-        alert(`Error: ${data.error}`);
+        showAlert(`Error: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error('Error submitting application:', error);
-      alert('Error submitting application. Please try again.');
+      console.error("Error submitting application:", error);
+      showAlert("Error submitting application. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'accepted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "accepted":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const hasUserApplied = (request: OrderRequest) => {
-    return request.order_applications?.some(app => app.farmer_id === userId);
+    return request.order_applications?.some((app) => app.farmer_id === userId);
   };
 
   const getUserApplicationStatus = (request: OrderRequest) => {
-    const userApp = request.order_applications?.find(app => app.farmer_id === userId);
+    const userApp = request.order_applications?.find(
+      (app) => app.farmer_id === userId,
+    );
     return userApp?.status || null;
   };
 
   const canApply = (request: OrderRequest) => {
     if (hasUserApplied(request)) return false;
-    if (request.status !== 'open') return false;
-    if (!request.allow_multiple_farmers && request.order_applications?.length > 0) return false;
+    if (request.status !== "open") return false;
+    if (
+      !request.allow_multiple_farmers &&
+      request.order_applications?.length > 0
+    )
+      return false;
     return true;
   };
 
@@ -151,14 +194,18 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
           <Bell className="w-6 h-6 text-green-600 mr-3" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Order Requests</h2>
-            <p className="text-gray-600 text-sm mt-1">Apply to buyer requests for produce</p>
+            <p className="text-gray-600 text-sm mt-1">
+              Apply to buyer requests for produce
+            </p>
           </div>
         </div>
-        
-        {orderRequests.filter(req => canApply(req)).length > 0 && (
+
+        {orderRequests.filter((req) => canApply(req)).length > 0 && (
           <div className="flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
             <AlertCircle className="w-4 h-4 mr-1" />
-            <span>{orderRequests.filter(req => canApply(req)).length} new requests</span>
+            <span>
+              {orderRequests.filter((req) => canApply(req)).length} new requests
+            </span>
           </div>
         )}
       </div>
@@ -169,7 +216,9 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             {/* Header with close button */}
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Submit Application</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                Submit Application
+              </h3>
               <button
                 onClick={() => setShowApplicationForm(null)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -177,19 +226,29 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            
-            <form onSubmit={(e) => handleApplicationSubmit(e, showApplicationForm)} className="space-y-4">
+
+            <form
+              onSubmit={(e) => handleApplicationSubmit(e, showApplicationForm)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Price per kg *
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 font-medium">₹</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 font-medium">
+                    ₹
+                  </span>
                   <input
                     type="number"
                     step="0.01"
                     value={applicationData.price_per_unit}
-                    onChange={(e) => setApplicationData({...applicationData, price_per_unit: e.target.value})}
+                    onChange={(e) =>
+                      setApplicationData({
+                        ...applicationData,
+                        price_per_unit: e.target.value,
+                      })
+                    }
                     className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                     placeholder="45.00"
                     required
@@ -204,7 +263,12 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                 <input
                   type="number"
                   value={applicationData.available_quantity}
-                  onChange={(e) => setApplicationData({...applicationData, available_quantity: e.target.value})}
+                  onChange={(e) =>
+                    setApplicationData({
+                      ...applicationData,
+                      available_quantity: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500"
                   placeholder="e.g., 100"
                   required
@@ -218,9 +282,14 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                 <input
                   type="date"
                   value={applicationData.delivery_date}
-                  onChange={(e) => setApplicationData({...applicationData, delivery_date: e.target.value})}
+                  onChange={(e) =>
+                    setApplicationData({
+                      ...applicationData,
+                      delivery_date: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500"
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
 
@@ -230,7 +299,12 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                 </label>
                 <textarea
                   value={applicationData.notes}
-                  onChange={(e) => setApplicationData({...applicationData, notes: e.target.value})}
+                  onChange={(e) =>
+                    setApplicationData({
+                      ...applicationData,
+                      notes: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-500 resize-none"
                   rows={3}
                   placeholder="Quality details, farming methods, etc..."
@@ -250,7 +324,7 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                   disabled={submitting}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Application'}
+                  {submitting ? "Submitting..." : "Submit Application"}
                 </button>
               </div>
             </form>
@@ -266,21 +340,28 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
       ) : orderRequests.length === 0 ? (
         <div className="text-center py-12">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Order Requests</h3>
-          <p className="text-gray-500">No active order requests at the moment. Check back later!</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Order Requests
+          </h3>
+          <p className="text-gray-500">
+            No active order requests at the moment. Check back later!
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
           {orderRequests.map((request) => {
             const userStatus = getUserApplicationStatus(request);
             const canApplyToThis = canApply(request);
-            
+
             return (
-              <div key={request.id} className={`border rounded-xl p-6 ${
-                request.is_scheduled 
-                  ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-white' 
-                  : 'border-gray-200'
-              }`}>
+              <div
+                key={request.id}
+                className={`border rounded-xl p-6 ${
+                  request.is_scheduled
+                    ? "border-purple-200 bg-gradient-to-r from-purple-50 to-white"
+                    : "border-gray-200"
+                }`}
+              >
                 {/* Scheduled Order Badge */}
                 {request.is_scheduled && (
                   <div className="flex items-center mb-3">
@@ -294,8 +375,12 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                 {/* Request Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{request.product_name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">Requested by: {request.users.name}</p>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {request.product_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Requested by: {request.users.name}
+                    </p>
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                       <div className="flex items-center">
                         <Package className="w-4 h-4 mr-1" />
@@ -313,10 +398,12 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-2">
                     {userStatus && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(userStatus)}`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(userStatus)}`}
+                      >
                         Your application: {userStatus}
                       </span>
                     )}
@@ -328,20 +415,30 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
 
                 {/* Request Details */}
                 {request.description && (
-                  <p className="text-gray-700 text-sm mb-4">{request.description}</p>
+                  <p className="text-gray-700 text-sm mb-4">
+                    {request.description}
+                  </p>
                 )}
 
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                   <div className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
-                    <span>{request.allow_multiple_farmers ? 'Multiple farmers can apply' : 'Single farmer only'}</span>
+                    <span>
+                      {request.allow_multiple_farmers
+                        ? "Multiple farmers can apply"
+                        : "Single farmer only"}
+                    </span>
                   </div>
-                  {request.order_applications && request.order_applications.length > 0 && (
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>{request.order_applications.length} application(s) received</span>
-                    </div>
-                  )}
+                  {request.order_applications &&
+                    request.order_applications.length > 0 && (
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        <span>
+                          {request.order_applications.length} application(s)
+                          received
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 {/* Action Buttons */}
@@ -349,7 +446,7 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                   <div className="text-sm text-gray-600">
                     Contact: {request.users.phone_number}
                   </div>
-                  
+
                   {canApplyToThis ? (
                     <button
                       onClick={() => setShowApplicationForm(request.id)}
@@ -363,7 +460,8 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
                       <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
                       <span>Application submitted</span>
                     </div>
-                  ) : !request.allow_multiple_farmers && request.order_applications?.length > 0 ? (
+                  ) : !request.allow_multiple_farmers &&
+                    request.order_applications?.length > 0 ? (
                     <div className="flex items-center text-sm text-gray-500">
                       <AlertCircle className="w-4 h-4 mr-2" />
                       <span>Application closed</span>
@@ -380,6 +478,15 @@ export default function FarmerOrderRequests({ userId }: FarmerOrderRequestsProps
           })}
         </div>
       )}
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="farmer"
+        type={alertInfo.type}
+      />
     </div>
   );
 }

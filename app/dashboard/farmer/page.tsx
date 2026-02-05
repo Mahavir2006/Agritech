@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import { useI18n } from '@/lib/i18n/context';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+import { useI18n } from "@/lib/i18n/context";
 import {
   BarChart3,
   Wheat,
@@ -28,29 +28,30 @@ import {
   X,
   Edit,
   Trash2,
-  Globe
-} from 'lucide-react';
+  Globe,
+} from "lucide-react";
 
 const getValidImageUrl = (url: string | undefined): string => {
   // User requested to use dummy images for now to avoid errors
-  if (!url) return 'https://placehold.co/600x400?text=Product+Image';
-  if (url.startsWith('http')) return url;
+  if (!url) return "https://placehold.co/600x400?text=Product+Image";
+  if (url.startsWith("http")) return url;
   // For relative paths or local files that might be missing, return placeholder
-  return 'https://placehold.co/600x400?text=Product+Image';
+  return "https://placehold.co/600x400?text=Product+Image";
 };
-import PhotoUpload from '@/components/PhotoUpload';
-import EditProduct from '@/components/EditProduct';
-import ProductDetails from '@/components/ProductDetails';
-import PriceDisplay from '@/components/PriceDisplay';
-import RatingModal from '@/components/RatingModal';
-import RatingDisplay from '@/components/RatingDisplay';
-import UserRatingDisplay from '@/components/UserRatingDisplay';
-import SubsidiesPrograms from '@/components/SubsidiesPrograms';
-import FarmerOrderRequests from '@/components/FarmerOrderRequests';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import Dashboard from '@/components/Dashboard';
-import { usePricePrediction } from '@/lib/hooks/usePricePrediction';
-import { matchState, getStateSuggestions } from '@/lib/utils/state-matcher';
+import PhotoUpload from "@/components/PhotoUpload";
+import EditProduct from "@/components/EditProduct";
+import ProductDetails from "@/components/ProductDetails";
+import PriceDisplay from "@/components/PriceDisplay";
+import RatingModal from "@/components/RatingModal";
+import RatingDisplay from "@/components/RatingDisplay";
+import UserRatingDisplay from "@/components/UserRatingDisplay";
+import SubsidiesPrograms from "@/components/SubsidiesPrograms";
+import FarmerOrderRequests from "@/components/FarmerOrderRequests";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import AlertModal from "@/components/AlertModal";
+import Dashboard from "@/components/Dashboard";
+import { usePricePrediction } from "@/lib/hooks/usePricePrediction";
+import { matchState, getStateSuggestions } from "@/lib/utils/state-matcher";
 
 interface User {
   id: number;
@@ -78,7 +79,9 @@ interface Product {
 export default function FarmerDashboard() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") || "dashboard",
+  );
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,36 +92,61 @@ export default function FarmerDashboard() {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
-  const [productName, setProductName] = useState('');
-  const [productQuantity, setProductQuantity] = useState('');
-  const [productPrice, setProductPrice] = useState('');
-  const [locationState, setLocationState] = useState('');
+  const [productName, setProductName] = useState("");
+  const [productQuantity, setProductQuantity] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [locationState, setLocationState] = useState("");
   const [stateSuggestions, setStateSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number, address?: string, state?: string } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+    state?: string;
+  } | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [selectedOrderForRating, setSelectedOrderForRating] = useState<any>(null);
+  const [selectedOrderForRating, setSelectedOrderForRating] =
+    useState<any>(null);
   const [orderRatings, setOrderRatings] = useState<{ [key: number]: any }>({});
   const [receivedRatings, setReceivedRatings] = useState<any[]>([]);
   const [userStats, setUserStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   // Price prediction hook
-  const { prediction, loading: priceLoading, error: priceError, searchPrices } = usePricePrediction();
+  const {
+    prediction,
+    loading: priceLoading,
+    error: priceError,
+    searchPrices,
+  } = usePricePrediction();
 
   useEffect(() => {
-    const tab = searchParams.get('tab');
+    const tab = searchParams.get("tab");
     if (tab) setActiveTab(tab);
 
-    const name = searchParams.get('name');
-    const price = searchParams.get('price');
-    const qty = searchParams.get('quantity');
+    const name = searchParams.get("name");
+    const price = searchParams.get("price");
+    const qty = searchParams.get("quantity");
 
     if (name) {
       setProductName(name);
       // Trigger price prediction if we have location
       if (locationState || (userLocation && userLocation.state)) {
-        searchPrices(name, locationState || userLocation?.state || '');
+        searchPrices(name, locationState || userLocation?.state || "");
       }
     }
     if (price) setProductPrice(price);
@@ -127,7 +155,7 @@ export default function FarmerDashboard() {
 
   useEffect(() => {
     // Get user from localStorage
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem("user");
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
@@ -143,24 +171,24 @@ export default function FarmerDashboard() {
         async (position) => {
           const coords = {
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
           };
 
           try {
             // Use reverse geocoding to get state information
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=10&addressdetails=1`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=10&addressdetails=1`,
             );
 
             if (response.ok) {
               const data = await response.json();
-              const address = data.display_name || '';
-              const state = data.address?.state || data.address?.region || '';
+              const address = data.display_name || "";
+              const state = data.address?.state || data.address?.region || "";
 
               setUserLocation({
                 ...coords,
                 address,
-                state: state
+                state: state,
               });
 
               // Auto-populate state field if it's empty
@@ -171,14 +199,14 @@ export default function FarmerDashboard() {
               setUserLocation(coords);
             }
           } catch (error) {
-            console.warn('Geocoding error:', error);
+            console.warn("Geocoding error:", error);
             setUserLocation(coords);
           }
         },
         (error) => {
-          console.warn('Geolocation error:', error);
+          console.warn("Geolocation error:", error);
         },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
       );
     }
   }, []);
@@ -186,17 +214,21 @@ export default function FarmerDashboard() {
   const fetchProducts = async (sellerId: number) => {
     try {
       const response = await fetch(`/api/products?seller_id=${sellerId}`);
+      if (!response.ok) {
+        console.error("Fetch products failed:", await response.text());
+        throw new Error(`Failed to fetch products: ${response.status}`);
+      }
       const data = await response.json();
 
       // Add seller phone to each product for ProductDetails component
       const productsWithPhone = (data.products || []).map((product: any) => ({
         ...product,
-        seller_phone: user?.phone_number || 'Not provided'
+        seller_phone: user?.phone_number || "Not provided",
       }));
 
       setProducts(productsWithPhone);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
     }
@@ -204,7 +236,13 @@ export default function FarmerDashboard() {
 
   const fetchOrders = async (sellerId: number) => {
     try {
-      const response = await fetch(`/api/orders?userId=${sellerId}&userType=seller`);
+      const response = await fetch(
+        `/api/orders?userId=${sellerId}&userType=seller`,
+      );
+      if (!response.ok) {
+        console.error("Fetch orders failed:", await response.text());
+        throw new Error(`Failed to fetch orders: ${response.status}`);
+      }
       const data = await response.json();
       const ordersData = data.orders || [];
       setOrders(ordersData);
@@ -213,9 +251,14 @@ export default function FarmerDashboard() {
       const ratingsMap: { [key: number]: any } = {};
       for (const order of ordersData) {
         try {
-          const ratingsResponse = await fetch(`/api/ratings?orderId=${order.id}`);
+          const ratingsResponse = await fetch(
+            `/api/ratings?orderId=${order.id}`,
+          );
+          if (!ratingsResponse.ok) continue;
           const ratingsData = await ratingsResponse.json();
-          const sellerRating = ratingsData.ratings?.find((r: any) => r.rater_id === sellerId);
+          const sellerRating = ratingsData.ratings?.find(
+            (r: any) => r.rater_id === sellerId,
+          );
           if (sellerRating) {
             ratingsMap[order.id] = sellerRating;
           }
@@ -225,42 +268,58 @@ export default function FarmerDashboard() {
       }
       setOrderRatings(ratingsMap);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     }
   };
 
   const fetchReceivedRatings = async (userId: number) => {
     try {
-      const response = await fetch(`/api/ratings?userId=${userId}&userType=seller`);
+      const response = await fetch(
+        `/api/ratings?userId=${userId}&userType=seller`,
+      );
+      if (!response.ok) {
+        console.error("Fetch ratings failed:", await response.text());
+        throw new Error(`Failed to fetch ratings: ${response.status}`);
+      }
       const data = await response.json();
       setReceivedRatings(data.ratings || []);
     } catch (error) {
-      console.error('Error fetching received ratings:', error);
+      console.error("Error fetching received ratings:", error);
     }
   };
 
   const fetchUserStats = async (userId: number) => {
     setStatsLoading(true);
     try {
-      const response = await fetch(`/api/user-stats?userId=${userId}&userType=seller`);
+      const response = await fetch(
+        `/api/user-stats?userId=${userId}&userType=seller`,
+      );
+      if (!response.ok) {
+        console.error("Fetch user stats failed:", await response.text());
+        throw new Error(`Failed to fetch user stats: ${response.status}`);
+      }
       const data = await response.json();
       setUserStats(data);
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error("Error fetching user stats:", error);
     } finally {
       setStatsLoading(false);
     }
   };
 
   const tabs = [
-    { id: 'dashboard', name: t('navigation.dashboard'), icon: BarChart3 },
-    { id: 'my-crops', name: t('farmer.myCrops'), icon: Wheat },
-    { id: 'add-product', name: t('farmer.addProduct'), icon: Plus },
-    { id: 'order-requests', name: t('navigation.orderRequests'), icon: ClipboardList },
-    { id: 'orders', name: t('navigation.myOrders'), icon: Package },
-    { id: 'reviews', name: t('farmer.receivedReviews'), icon: Star },
-    { id: 'subsidies', name: t('subsidies.title'), icon: Award },
-    { id: 'profile', name: t('navigation.profile'), icon: User },
+    { id: "dashboard", name: t("navigation.dashboard"), icon: BarChart3 },
+    { id: "my-crops", name: t("farmer.myCrops"), icon: Wheat },
+    { id: "add-product", name: t("farmer.addProduct"), icon: Plus },
+    {
+      id: "order-requests",
+      name: t("navigation.orderRequests"),
+      icon: ClipboardList,
+    },
+    { id: "orders", name: t("navigation.myOrders"), icon: Package },
+    { id: "reviews", name: t("farmer.receivedReviews"), icon: Star },
+    { id: "subsidies", name: t("subsidies.title"), icon: Award },
+    { id: "profile", name: t("navigation.profile"), icon: User },
     // { id: 'settings', name: 'Settings', icon: Settings },
   ];
 
@@ -270,22 +329,24 @@ export default function FarmerDashboard() {
 
     const formData = new FormData(e.target as HTMLFormElement);
     const productData = {
-      name: formData.get('name'),
-      category: formData.get('category'),
-      quantity: parseInt(formData.get('quantity') as string),
+      name: formData.get("name"),
+      category: formData.get("category"),
+      quantity: parseInt(formData.get("quantity") as string),
       seller_id: user.id,
-      price_single: parseFloat(formData.get('price_single') as string),
-      price_multiple: parseFloat(formData.get('price_multiple') as string) || null,
-      min_bulk_quantity: parseInt(formData.get('min_bulk_quantity') as string) || null,
-      location: formData.get('location'),
-      description: formData.get('description')
+      price_single: parseFloat(formData.get("price_single") as string),
+      price_multiple:
+        parseFloat(formData.get("price_multiple") as string) || null,
+      min_bulk_quantity:
+        parseInt(formData.get("min_bulk_quantity") as string) || null,
+      location: formData.get("location"),
+      description: formData.get("description"),
     };
 
     try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productData)
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productData),
       });
 
       if (response.ok) {
@@ -301,14 +362,14 @@ export default function FarmerDashboard() {
 
             // Create FormData for server-side upload
             const photoFormData = new FormData();
-            photoFormData.append('file', file);
-            photoFormData.append('userId', user.id.toString());
-            photoFormData.append('productId', productId.toString());
+            photoFormData.append("file", file);
+            photoFormData.append("userId", user.id.toString());
+            photoFormData.append("productId", productId.toString());
 
             // Upload via API route
-            const uploadResponse = await fetch('/api/upload-photo', {
-              method: 'POST',
-              body: photoFormData
+            const uploadResponse = await fetch("/api/upload-photo", {
+              method: "POST",
+              body: photoFormData,
             });
 
             if (uploadResponse.ok) {
@@ -319,13 +380,13 @@ export default function FarmerDashboard() {
 
           // Update product with photo URLs
           if (uploadedUrls.length > 0) {
-            await fetch('/api/upload-photos', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            await fetch("/api/upload-photos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 productId: productId,
-                photoUrls: uploadedUrls
-              })
+                photoUrls: uploadedUrls,
+              }),
             });
           }
         }
@@ -333,22 +394,22 @@ export default function FarmerDashboard() {
         // Refresh products list and orders, then reset form
         fetchProducts(user.id);
         fetchOrders(user.id);
-        setActiveTab('my-crops');
+        setActiveTab("my-crops");
         (e.target as HTMLFormElement).reset();
         setSelectedPhotos([]);
         setNewProductId(null);
-        setProductName(''); // Reset product name state
-        setProductQuantity('');
-        setProductPrice('');
-        setLocationState(''); // Reset location state
+        setProductName(""); // Reset product name state
+        setProductQuantity("");
+        setProductPrice("");
+        setLocationState(""); // Reset location state
         setShowSuggestions(false); // Hide suggestions
         setStateSuggestions([]); // Clear suggestions
 
-        alert('Product added successfully!');
+        showAlert("Product added successfully!", "success");
       }
     } catch (error) {
-      console.error('Error adding product:', error);
-      alert('Error adding product. Please try again.');
+      console.error("Error adding product:", error);
+      showAlert("Error adding product. Please try again.", "error");
     }
   };
 
@@ -356,13 +417,13 @@ export default function FarmerDashboard() {
     if (!newProductId) return;
 
     try {
-      const response = await fetch('/api/upload-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/upload-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: newProductId,
-          photoUrls
-        })
+          photoUrls,
+        }),
       });
 
       if (response.ok) {
@@ -370,13 +431,13 @@ export default function FarmerDashboard() {
         if (user) {
           fetchProducts(user.id);
         }
-        setActiveTab('my-crops');
+        setActiveTab("my-crops");
         setNewProductId(null);
         setSelectedPhotos([]);
-        alert('Product and photos uploaded successfully!');
+        showAlert("Product and photos uploaded successfully!", "success");
       }
     } catch (error) {
-      console.error('Error updating product photos:', error);
+      console.error("Error updating product photos:", error);
     }
   };
 
@@ -394,10 +455,12 @@ export default function FarmerDashboard() {
     // Ensure seller_phone is preserved from the original product
     const productWithPhone = {
       ...updatedProduct,
-      seller_phone: user?.phone_number || 'Not provided'
+      seller_phone: user?.phone_number || "Not provided",
     };
 
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? productWithPhone : p));
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? productWithPhone : p)),
+    );
     setShowEditModal(false);
     setEditingProduct(null);
     // Refresh orders in case stock changed
@@ -407,7 +470,7 @@ export default function FarmerDashboard() {
   };
 
   const handleDeleteProduct = (productId: number) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
     setShowEditModal(false);
     setEditingProduct(null);
     // Refresh orders
@@ -419,10 +482,15 @@ export default function FarmerDashboard() {
   const updateOrderStatus = async (orderId: number, status: string) => {
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
       });
+
+      if (!response.ok) {
+        console.error("Update order status failed:", await response.text());
+        throw new Error(`Failed to update order status: ${response.status}`);
+      }
 
       const result = await response.json();
       if (result.success) {
@@ -430,13 +498,13 @@ export default function FarmerDashboard() {
         if (user) {
           fetchOrders(user.id);
         }
-        alert(`Order ${status} successfully!`);
+        showAlert(`Order ${status} successfully!`, "success");
       } else {
-        alert(`Failed to ${status} order: ${result.error}`);
+        showAlert(`Failed to ${status} order: ${result.error}`, "error");
       }
     } catch (error) {
-      console.error('Error updating order status:', error);
-      alert('Error updating order status');
+      console.error("Error updating order status:", error);
+      showAlert("Error updating order status", "error");
     }
   };
 
@@ -450,48 +518,61 @@ export default function FarmerDashboard() {
 
     try {
       const existingRating = orderRatings[selectedOrderForRating.id];
-      const method = existingRating ? 'PUT' : 'POST';
+      const method = existingRating ? "PUT" : "POST";
       const body = existingRating
         ? { ratingId: existingRating.id, raterId: user.id, rating, review }
         : {
-          orderId: selectedOrderForRating.id,
-          raterId: user.id,
-          ratedId: selectedOrderForRating.buyer.id,
-          raterType: 'seller',
-          rating,
-          review
-        };
+            orderId: selectedOrderForRating.id,
+            raterId: user.id,
+            ratedId: selectedOrderForRating.buyer.id,
+            raterType: "seller",
+            rating,
+            review,
+          };
 
-      const response = await fetch('/api/ratings', {
+      const response = await fetch("/api/ratings", {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
+
+      if (!response.ok) {
+        console.error("Submit rating failed:", await response.text());
+        throw new Error(`Failed to submit rating: ${response.status}`);
+      }
 
       const result = await response.json();
       if (result.success) {
         // Update local ratings state
-        setOrderRatings(prev => ({
+        setOrderRatings((prev) => ({
           ...prev,
-          [selectedOrderForRating.id]: result.rating
+          [selectedOrderForRating.id]: result.rating,
         }));
-        alert(existingRating ? 'Rating updated successfully!' : 'Rating submitted successfully!');
+        showAlert(
+          existingRating
+            ? "Rating updated successfully!"
+            : "Rating submitted successfully!",
+          "success",
+        );
       } else {
         // Check if it's a table missing error
-        if (result.error?.includes('Ratings table does not exist')) {
+        if (result.error?.includes("Ratings table does not exist")) {
           const shouldSetup = confirm(
-            'The ratings table needs to be created first. Would you like to go to the setup page?'
+            "The ratings table needs to be created first. Would you like to go to the setup page?",
           );
           if (shouldSetup) {
-            window.open('/setup', '_blank');
+            window.open("/setup", "_blank");
           }
         } else {
-          alert(result.error || 'Failed to submit rating');
+          showAlert(result.error || "Failed to submit rating", "error");
         }
       }
     } catch (error) {
-      console.error('Error submitting rating:', error);
-      alert('Error submitting rating. Please check your connection and try again.');
+      console.error("Error submitting rating:", error);
+      showAlert(
+        "Error submitting rating. Please check your connection and try again.",
+        "error",
+      );
     }
   };
 
@@ -507,14 +588,23 @@ export default function FarmerDashboard() {
                 <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                   <Sprout className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="ml-3 text-xl font-semibold text-gray-900">AgriBridge</h1>
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Farmer</span>
+                <h1 className="ml-3 text-xl font-semibold text-gray-900">
+                  AgriBridge
+                </h1>
+                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  Farmer
+                </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <LanguageSwitcher />
-              <span className="text-sm text-gray-600">{t('farmer.welcome')}, {user?.name}</span>
-              <Link href="/" className="text-sm text-white hover:text-gray-700  px-4 py-1 bg-red-400 rounded-lg">
+              <span className="text-sm text-gray-600">
+                {t("farmer.welcome")}, {user?.name}
+              </span>
+              <Link
+                href="/"
+                className="text-sm text-white hover:text-gray-700  px-4 py-1 bg-red-400 rounded-lg"
+              >
                 Logout
               </Link>
             </div>
@@ -527,18 +617,27 @@ export default function FarmerDashboard() {
                 <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                   <Sprout className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="ml-3 text-xl font-semibold text-gray-900">AgriBridge</h1>
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Farmer</span>
+                <h1 className="ml-3 text-xl font-semibold text-gray-900">
+                  AgriBridge
+                </h1>
+                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  Farmer
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <LanguageSwitcher />
-                <Link href="/" className="text-sm text-white hover:text-gray-700  px-4 py-1 bg-red-400 rounded-lg">
+                <Link
+                  href="/"
+                  className="text-sm text-white hover:text-gray-700  px-4 py-1 bg-red-400 rounded-lg"
+                >
                   Logout
                 </Link>
               </div>
             </div>
             <div className="text-center">
-              <span className="text-sm text-gray-600">{t('farmer.welcome')}, {user?.name}</span>
+              <span className="text-sm text-gray-600">
+                {t("farmer.welcome")}, {user?.name}
+              </span>
             </div>
           </div>
         </div>
@@ -556,13 +655,16 @@ export default function FarmerDashboard() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex-shrink-0 flex items-center px-3 py-2 rounded-lg transition-all text-sm ${activeTab === tab.id
-                        ? 'bg-green-100 text-green-700'
-                        : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                      className={`flex-shrink-0 flex items-center px-3 py-2 rounded-lg transition-all text-sm ${
+                        activeTab === tab.id
+                          ? "bg-green-100 text-green-700"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
                     >
                       <IconComponent className="w-4 h-4 mr-2" />
-                      <span className="font-medium whitespace-nowrap">{tab.name}</span>
+                      <span className="font-medium whitespace-nowrap">
+                        {tab.name}
+                      </span>
                     </button>
                   );
                 })}
@@ -580,10 +682,11 @@ export default function FarmerDashboard() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all ${activeTab === tab.id
-                        ? 'bg-green-100 text-green-700 border-l-4 border-green-500'
-                        : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                      className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all ${
+                        activeTab === tab.id
+                          ? "bg-green-100 text-green-700 border-l-4 border-green-500"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
                     >
                       <IconComponent className="w-5 h-5 mr-3" />
                       <span className="font-medium">{tab.name}</span>
@@ -595,31 +698,52 @@ export default function FarmerDashboard() {
 
             {/* Quick Stats */}
             <div className="mt-6 bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.quickStats')}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                {t("dashboard.quickStats")}
+              </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('dashboard.activeListing')}</span>
-                  <span className="font-semibold text-green-600">{products.length}</span>
+                  <span className="text-gray-600">
+                    {t("dashboard.activeListing")}
+                  </span>
+                  <span className="font-semibold text-green-600">
+                    {products.length}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('dashboard.totalStock')}</span>
+                  <span className="text-gray-600">
+                    {t("dashboard.totalStock")}
+                  </span>
                   <span className="font-semibold text-orange-600">
                     {products.reduce((sum, p) => sum + p.quantity, 0)}kg
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('dashboard.avgPrice')}</span>
+                  <span className="text-gray-600">
+                    {t("dashboard.avgPrice")}
+                  </span>
                   <span className="font-semibold text-green-600">
-                    ₹{products.length > 0 ? Math.round(products.reduce((sum, p) => sum + p.price_single, 0) / products.length) : 0}/kg
+                    ₹
+                    {products.length > 0
+                      ? Math.round(
+                          products.reduce((sum, p) => sum + p.price_single, 0) /
+                            products.length,
+                        )
+                      : 0}
+                    /kg
                   </span>
                 </div>
                 {userStats?.stats && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">{t('dashboard.myRating')}</span>
+                    <span className="text-gray-600">
+                      {t("dashboard.myRating")}
+                    </span>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-400 fill-current" />
                       <span className="font-semibold text-yellow-600">
-                        {userStats.stats.averageRating > 0 ? userStats.stats.averageRating.toFixed(1) : 'N/A'}
+                        {userStats.stats.averageRating > 0
+                          ? userStats.stats.averageRating.toFixed(1)
+                          : "N/A"}
                       </span>
                     </div>
                   </div>
@@ -631,25 +755,41 @@ export default function FarmerDashboard() {
           {/* Mobile Quick Stats */}
           <div className="lg:hidden grid grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{products.length}</div>
-              <div className="text-xs text-gray-600">{t('dashboard.activeListing')}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {products.length}
+              </div>
+              <div className="text-xs text-gray-600">
+                {t("dashboard.activeListing")}
+              </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">{products.reduce((sum, p) => sum + p.quantity, 0)}</div>
-              <div className="text-xs text-gray-600">{t('dashboard.totalStock')} (kg)</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {products.reduce((sum, p) => sum + p.quantity, 0)}
+              </div>
+              <div className="text-xs text-gray-600">
+                {t("dashboard.totalStock")} (kg)
+              </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4 text-center">
               <div className="text-lg font-bold text-green-600">
-                ₹{products.length > 0 ? Math.round(products.reduce((sum, p) => sum + p.price_single, 0) / products.length) : 0}
+                ₹
+                {products.length > 0
+                  ? Math.round(
+                      products.reduce((sum, p) => sum + p.price_single, 0) /
+                        products.length,
+                    )
+                  : 0}
               </div>
-              <div className="text-xs text-gray-600">{t('dashboard.avgPrice')}/kg</div>
+              <div className="text-xs text-gray-600">
+                {t("dashboard.avgPrice")}/kg
+              </div>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="flex-1">
             {/* Profile Tab */}
-            {activeTab === 'profile' && user && (
+            {activeTab === "profile" && user && (
               <div className="space-y-6">
                 {/* User Rating Display */}
                 {userStats && (
@@ -663,40 +803,50 @@ export default function FarmerDashboard() {
                 <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
                   <div className="flex items-center mb-6">
                     <User className="w-6 h-6 text-green-600 mr-3" />
-                    <h2 className="text-2xl font-bold text-gray-900">{t('labels.information')} {t('navigation.profile')}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {t("labels.information")} {t("navigation.profile")}
+                    </h2>
                   </div>
 
                   <div className="max-w-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('forms.fullName')}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t("forms.fullName")}
+                        </label>
                         <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900">
                           {user.name}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('forms.role')}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t("forms.role")}
+                        </label>
                         <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-800 font-medium capitalize">
                           {user.role}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('forms.emailAddress')}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t("forms.emailAddress")}
+                        </label>
                         <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900">
                           {user.email}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('forms.phoneNumber')}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t("forms.phoneNumber")}
+                        </label>
                         <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900">
-                          {user.phone_number || t('forms.notProvided')}
+                          {user.phone_number || t("forms.notProvided")}
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-8">
                       <button className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors">
-                        {t('forms.editProfile')}
+                        {t("forms.editProfile")}
                       </button>
                     </div>
                   </div>
@@ -705,29 +855,29 @@ export default function FarmerDashboard() {
             )}
 
             {/* Order Requests Tab */}
-            {activeTab === 'order-requests' && user && (
+            {activeTab === "order-requests" && user && (
               <FarmerOrderRequests userId={user.id} />
             )}
 
             {/* Subsidies & Programs Tab */}
-            {activeTab === 'subsidies' && (
-              <SubsidiesPrograms />
-            )}
+            {activeTab === "subsidies" && <SubsidiesPrograms />}
 
             {/* Add Product Form */}
-            {activeTab === 'add-product' && (
+            {activeTab === "add-product" && (
               <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
                 <div className="max-w-2xl mx-auto">
                   <div className="flex items-center mb-6">
                     <Plus className="w-6 h-6 text-green-600 mr-3" />
-                    <h2 className="text-2xl font-bold text-gray-900">{t('farmer.addProduct')}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {t("farmer.addProduct")}
+                    </h2>
                   </div>
 
                   <form onSubmit={handleAddProduct} className="space-y-6">
                     {/* Product Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t('forms.productName')}
+                        {t("forms.productName")}
                       </label>
                       <input
                         type="text"
@@ -736,11 +886,14 @@ export default function FarmerDashboard() {
                         onChange={(e) => {
                           setProductName(e.target.value);
                           const matchedState = matchState(locationState);
-                          const stateToUse = matchedState || locationState || userLocation?.state;
+                          const stateToUse =
+                            matchedState ||
+                            locationState ||
+                            userLocation?.state;
                           searchPrices(e.target.value, stateToUse);
                         }}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-                        placeholder={t('placeholders.freshTomatoes')}
+                        placeholder={t("placeholders.freshTomatoes")}
                         required
                       />
                     </div>
@@ -748,21 +901,35 @@ export default function FarmerDashboard() {
                     {/* Category */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t('forms.category')}
+                        {t("forms.category")}
                       </label>
-                      <select name="category" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900" required>
-                        <option value="" className="text-gray-500">{t('forms.selectCategory')}</option>
-                        <option value="vegetables" className="text-gray-900">{t('product.categories.vegetables')}</option>
-                        <option value="fruits" className="text-gray-900">{t('product.categories.fruits')}</option>
-                        <option value="grains" className="text-gray-900">{t('product.categories.grains')}</option>
-                        <option value="herbs" className="text-gray-900">{t('product.categories.herbs')}</option>
+                      <select
+                        name="category"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900"
+                        required
+                      >
+                        <option value="" className="text-gray-500">
+                          {t("forms.selectCategory")}
+                        </option>
+                        <option value="vegetables" className="text-gray-900">
+                          {t("product.categories.vegetables")}
+                        </option>
+                        <option value="fruits" className="text-gray-900">
+                          {t("product.categories.fruits")}
+                        </option>
+                        <option value="grains" className="text-gray-900">
+                          {t("product.categories.grains")}
+                        </option>
+                        <option value="herbs" className="text-gray-900">
+                          {t("product.categories.herbs")}
+                        </option>
                       </select>
                     </div>
 
                     {/* Quantity */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t('forms.availableQuantity')}
+                        {t("forms.availableQuantity")}
                       </label>
                       <input
                         type="number"
@@ -770,7 +937,7 @@ export default function FarmerDashboard() {
                         value={productQuantity}
                         onChange={(e) => setProductQuantity(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-                        placeholder={t('placeholders.quantity500')}
+                        placeholder={t("placeholders.quantity500")}
                         required
                       />
                     </div>
@@ -781,7 +948,7 @@ export default function FarmerDashboard() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           <Tag className="w-4 h-4 inline mr-1" />
-                          {t('forms.singleUnitPrice')}
+                          {t("forms.singleUnitPrice")}
                         </label>
                         <input
                           type="number"
@@ -790,21 +957,23 @@ export default function FarmerDashboard() {
                           value={productPrice}
                           onChange={(e) => setProductPrice(e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-                          placeholder={t('placeholders.price500')}
+                          placeholder={t("placeholders.price500")}
                           required
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           <Calculator className="w-4 h-4 inline mr-1" />
-                          {t('forms.bulkPrice')}
+                          {t("forms.bulkPrice")}
                         </label>
                         <input
                           type="number"
                           name="price_multiple"
                           step="0.01"
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-                          placeholder={t('placeholders.bulkPrice') || "e.g. 450"}
+                          placeholder={
+                            t("placeholders.bulkPrice") || "e.g. 450"
+                          }
                         />
                       </div>
                       <div>
@@ -825,7 +994,7 @@ export default function FarmerDashboard() {
                     <div className="relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <MapPin className="w-4 h-4 inline mr-1" />
-                        {t('forms.state')}
+                        {t("forms.state")}
                       </label>
                       <input
                         type="text"
@@ -835,7 +1004,7 @@ export default function FarmerDashboard() {
                           const inputValue = e.target.value;
                           setLocationState(inputValue);
 
-                          console.log('🏛️ State input changed:', inputValue);
+                          console.log("🏛️ State input changed:", inputValue);
 
                           // Get suggestions for dropdown
                           if (inputValue.length > 0) {
@@ -848,26 +1017,33 @@ export default function FarmerDashboard() {
 
                           // Smart state matching for price prediction
                           const matchedState = matchState(inputValue);
-                          const stateToUse = matchedState || inputValue || userLocation?.state;
+                          const stateToUse =
+                            matchedState || inputValue || userLocation?.state;
 
-                          console.log('🧠 Smart state matching:', {
+                          console.log("🧠 Smart state matching:", {
                             input: inputValue,
                             matched: matchedState,
                             using: stateToUse,
-                            productName: productName
+                            productName: productName,
                           });
 
                           // Trigger price prediction update when state changes
                           if (productName) {
-                            console.log('🚀 Triggering price search with:', { productName, stateToUse });
+                            console.log("🚀 Triggering price search with:", {
+                              productName,
+                              stateToUse,
+                            });
                             searchPrices(productName, stateToUse);
                           } else {
-                            console.log('⚠️ No product name, skipping price search');
+                            console.log(
+                              "⚠️ No product name, skipping price search",
+                            );
                           }
                         }}
                         onFocus={() => {
                           if (locationState.length > 0) {
-                            const suggestions = getStateSuggestions(locationState);
+                            const suggestions =
+                              getStateSuggestions(locationState);
                             setStateSuggestions(suggestions);
                             setShowSuggestions(true);
                           }
@@ -877,7 +1053,7 @@ export default function FarmerDashboard() {
                           setTimeout(() => setShowSuggestions(false), 200);
                         }}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-gray-900 placeholder-gray-500"
-                        placeholder={t('placeholders.stateExample')}
+                        placeholder={t("placeholders.stateExample")}
                         autoComplete="off"
                       />
 
@@ -909,12 +1085,16 @@ export default function FarmerDashboard() {
                       )}
 
                       {/* Smart matching indicator */}
-                      {locationState && matchState(locationState) && matchState(locationState) !== locationState && (
-                        <div className="mt-1 text-xs text-green-600 flex items-center">
-                          <span className="mr-1">🧠</span>
-                          <span>Smart match: "{matchState(locationState)}"</span>
-                        </div>
-                      )}
+                      {locationState &&
+                        matchState(locationState) &&
+                        matchState(locationState) !== locationState && (
+                          <div className="mt-1 text-xs text-green-600 flex items-center">
+                            <span className="mr-1">🧠</span>
+                            <span>
+                              Smart match: "{matchState(locationState)}"
+                            </span>
+                          </div>
+                        )}
                     </div>
 
                     {/* Price Prediction Display - Always show when product name exists (never disappear) */}
@@ -924,12 +1104,22 @@ export default function FarmerDashboard() {
                         loading={priceLoading}
                         error={priceError}
                         productName={productName}
-                        stateName={matchState(locationState) || locationState || userLocation?.state}
+                        stateName={
+                          matchState(locationState) ||
+                          locationState ||
+                          userLocation?.state
+                        }
                         onReload={() => {
-                          console.log('🔄 Reloading price prediction for:', { productName, locationState });
+                          console.log("🔄 Reloading price prediction for:", {
+                            productName,
+                            locationState,
+                          });
                           const matchedState = matchState(locationState);
-                          const stateToUse = matchedState || locationState || userLocation?.state;
-                          console.log('🎯 Using state for reload:', stateToUse);
+                          const stateToUse =
+                            matchedState ||
+                            locationState ||
+                            userLocation?.state;
+                          console.log("🎯 Using state for reload:", stateToUse);
                           searchPrices(productName, stateToUse);
                         }}
                       />
@@ -938,13 +1128,13 @@ export default function FarmerDashboard() {
                     {/* Description */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t('forms.description')}
+                        {t("forms.description")}
                       </label>
                       <textarea
                         name="description"
                         rows={4}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none text-gray-900 placeholder-gray-500"
-                        placeholder={t('placeholders.describeProduct')}
+                        placeholder={t("placeholders.describeProduct")}
                       ></textarea>
                     </div>
 
@@ -952,7 +1142,7 @@ export default function FarmerDashboard() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <ImageIcon className="w-4 h-4 inline mr-1" />
-                        {t('forms.productPhotos')}
+                        {t("forms.productPhotos")}
                       </label>
                       <PhotoUpload
                         onPhotosChange={setSelectedPhotos}
@@ -967,433 +1157,542 @@ export default function FarmerDashboard() {
                         type="submit"
                         className="flex-1 bg-green-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-green-700 transition-colors"
                       >
-                        {t('forms.addProduct')}
+                        {t("forms.addProduct")}
                       </button>
                       <button
                         type="button"
                         className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-                        onClick={() => setActiveTab('my-crops')}
+                        onClick={() => setActiveTab("my-crops")}
                       >
-                        {t('forms.cancel')}
+                        {t("forms.cancel")}
                       </button>
                     </div>
                   </form>
                 </div>
               </div>
-            )
-            }
+            )}
 
             {/* Orders Tab */}
-            {
-              activeTab === 'orders' && (
-                <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                      <Package className="w-6 h-6 text-green-600 mr-3" />
-                      <h2 className="text-2xl font-bold text-gray-900">My Orders</h2>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {orders.length} order{orders.length !== 1 ? 's' : ''}
-                    </div>
+            {activeTab === "orders" && (
+              <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center">
+                    <Package className="w-6 h-6 text-green-600 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      My Orders
+                    </h2>
                   </div>
+                  <div className="text-sm text-gray-600">
+                    {orders.length} order{orders.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
 
-                  {orders.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">{t('status.noOrdersYet')}</h3>
-                      <p className="text-gray-500">{t('status.ordersWillAppear')}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div key={order.id} className="border border-gray-200 rounded-xl p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                                {order.product?.photos && order.product.photos.length > 0 ? (
-                                  <Image
-                                    src={getValidImageUrl(order.product.photos[0])}
-                                    alt={order.product.name}
-                                    width={64}
-                                    height={64}
-                                    className="w-full h-full object-cover rounded-lg"
-                                    unoptimized
-                                  />
-                                ) : (
-                                  <ImageIcon className="w-6 h-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-gray-900">{order.product?.name}</h3>
-                                <p className="text-sm text-gray-600">Order #{order.id}</p>
-                                <p className="text-sm text-gray-600">
-                                  {new Date(order.order_date).toLocaleDateString()}
-                                </p>
-                              </div>
+                {orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {t("status.noOrdersYet")}
+                    </h3>
+                    <p className="text-gray-500">
+                      {t("status.ordersWillAppear")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="border border-gray-200 rounded-xl p-6"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                              {order.product?.photos &&
+                              order.product.photos.length > 0 ? (
+                                <Image
+                                  src={getValidImageUrl(
+                                    order.product.photos[0],
+                                  )}
+                                  alt={order.product.name}
+                                  width={64}
+                                  height={64}
+                                  className="w-full h-full object-cover rounded-lg"
+                                  unoptimized
+                                />
+                              ) : (
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              )}
                             </div>
-                            <div className="text-right">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                  order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-                                    order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                      'bg-red-100 text-red-800'
-                                }`}>
-                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                              </span>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {order.product?.name}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                Order #{order.id}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {new Date(
+                                  order.order_date,
+                                ).toLocaleDateString()}
+                              </p>
                             </div>
                           </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div>
-                              <p className="text-sm text-gray-700">Buyer</p>
-                              <p className="font-medium text-gray-900">{order.buyer?.name}</p>
-                              <p className="text-sm text-gray-700">{order.buyer?.phone_number}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-700">Quantity & Price</p>
-                              <p className="font-medium text-red-400">{order.quantity}kg × ₹{order.unit_price}</p>
-                              <p className="text-lg font-semibold text-green-600">₹{order.total_price}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-700">Delivery Address</p>
-                              <p className="text-sm text-gray-700">{order.delivery_address}</p>
-                            </div>
+                          <div className="text-right">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                order.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : order.status === "confirmed"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : order.status === "shipped"
+                                      ? "bg-purple-100 text-purple-800"
+                                      : order.status === "delivered"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {order.status.charAt(0).toUpperCase() +
+                                order.status.slice(1)}
+                            </span>
                           </div>
+                        </div>
 
-                          {order.notes && (
-                            <div className="mb-4">
-                              <p className="text-sm text-gray-700">Notes</p>
-                              <p className="text-sm text-gray-700">{order.notes}</p>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm text-gray-700">Buyer</p>
+                            <p className="font-medium text-gray-900">
+                              {order.buyer?.name}
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {order.buyer?.phone_number}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-700">
+                              Quantity & Price
+                            </p>
+                            <p className="font-medium text-red-400">
+                              {order.quantity}kg × ₹{order.unit_price}
+                            </p>
+                            <p className="text-lg font-semibold text-green-600">
+                              ₹{order.total_price}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-700">
+                              Delivery Address
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {order.delivery_address}
+                            </p>
+                          </div>
+                        </div>
+
+                        {order.notes && (
+                          <div className="mb-4">
+                            <p className="text-sm text-gray-700">Notes</p>
+                            <p className="text-sm text-gray-700">
+                              {order.notes}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          {/* Order status specific actions */}
+                          {order.status === "pending" && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "confirmed")
+                                }
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+                              >
+                                Confirm Order
+                              </button>
+                              <button
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "cancelled")
+                                }
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+                          {order.status === "confirmed" && (
+                            <button
+                              onClick={() =>
+                                updateOrderStatus(order.id, "shipped")
+                              }
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                            >
+                              Mark as Shipped
+                            </button>
+                          )}
+                          {order.status === "shipped" && (
+                            <button
+                              onClick={() =>
+                                updateOrderStatus(order.id, "delivered")
+                              }
+                              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition-colors"
+                            >
+                              Mark as Delivered
+                            </button>
                           )}
 
-                          <div className="flex gap-2">
-                            {/* Order status specific actions */}
-                            {order.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
-                                >
-                                  Confirm Order
-                                </button>
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
-                                >
-                                  Decline
-                                </button>
-                              </>
-                            )}
-                            {order.status === 'confirmed' && (
-                              <button
-                                onClick={() => updateOrderStatus(order.id, 'shipped')}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                              >
-                                Mark as Shipped
-                              </button>
-                            )}
-                            {order.status === 'shipped' && (
-                              <button
-                                onClick={() => updateOrderStatus(order.id, 'delivered')}
-                                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition-colors"
-                              >
-                                Mark as Delivered
-                              </button>
-                            )}
+                          {/* Rating button for all order statuses */}
+                          <button
+                            onClick={() => handleRateBuyer(order)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              orderRatings[order.id]
+                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                : "bg-green-600 text-white hover:bg-green-700"
+                            }`}
+                          >
+                            {orderRatings[order.id]
+                              ? "Update Rating"
+                              : "Rate Buyer"}
+                          </button>
 
-                            {/* Rating button for all order statuses */}
-                            <button
-                              onClick={() => handleRateBuyer(order)}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${orderRatings[order.id]
-                                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                : 'bg-green-600 text-white hover:bg-green-700'
-                                }`}
-                            >
-                              {orderRatings[order.id] ? 'Update Rating' : 'Rate Buyer'}
-                            </button>
+                          {/* Contact Buyer - Functional dialer redirect */}
+                          <button
+                            onClick={() => {
+                              if (order.buyer?.phone_number) {
+                                window.open(
+                                  `tel:${order.buyer.phone_number}`,
+                                  "_self",
+                                );
+                              }
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center space-x-1"
+                          >
+                            <Phone className="w-4 h-4" />
+                            <span>Contact Buyer</span>
+                          </button>
+                        </div>
 
-                            {/* Contact Buyer - Functional dialer redirect */}
-                            <button
-                              onClick={() => {
-                                if (order.buyer?.phone_number) {
-                                  window.open(`tel:${order.buyer.phone_number}`, '_self');
-                                }
-                              }}
-                              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center space-x-1"
-                            >
-                              <Phone className="w-4 h-4" />
-                              <span>Contact Buyer</span>
-                            </button>
+                        {/* Display existing rating if available */}
+                        {orderRatings[order.id] && (
+                          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-sm font-medium text-yellow-800">
+                                Your Rating for Buyer:
+                              </span>
+                              <div className="flex space-x-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`w-4 h-4 ${
+                                      star <= orderRatings[order.id].rating
+                                        ? "text-yellow-400 fill-current"
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-yellow-700">
+                                {orderRatings[order.id].rating}/5
+                              </span>
+                            </div>
+                            {orderRatings[order.id].review && (
+                              <p className="text-sm text-yellow-700 mt-1">
+                                "{orderRatings[order.id].review}"
+                              </p>
+                            )}
                           </div>
+                        )}
 
-                          {/* Display existing rating if available */}
-                          {orderRatings[order.id] && (
-                            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        {/* Display buyer's rating for this seller if available */}
+                        {(() => {
+                          const buyerRating = receivedRatings.find(
+                            (r) => r.order?.id === order.id,
+                          );
+                          return buyerRating ? (
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                               <div className="flex items-center space-x-2 mb-1">
-                                <span className="text-sm font-medium text-yellow-800">Your Rating for Buyer:</span>
+                                <span className="text-sm font-medium text-blue-800">
+                                  Buyer's Rating & Review:
+                                </span>
                                 <div className="flex space-x-1">
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
                                       key={star}
-                                      className={`w-4 h-4 ${star <= orderRatings[order.id].rating
-                                        ? 'text-yellow-400 fill-current'
-                                        : 'text-gray-300'
-                                        }`}
+                                      className={`w-4 h-4 ${
+                                        star <= buyerRating.rating
+                                          ? "text-yellow-400 fill-current"
+                                          : "text-gray-300"
+                                      }`}
                                     />
                                   ))}
                                 </div>
-                                <span className="text-sm text-yellow-700">
-                                  {orderRatings[order.id].rating}/5
+                                <span className="text-sm text-blue-700">
+                                  {buyerRating.rating}/5
                                 </span>
                               </div>
-                              {orderRatings[order.id].review && (
-                                <p className="text-sm text-yellow-700 mt-1">
-                                  "{orderRatings[order.id].review}"
+                              {buyerRating.review && (
+                                <p className="text-sm text-blue-700 mt-1">
+                                  "{buyerRating.review}"
                                 </p>
                               )}
                             </div>
-                          )}
-
-                          {/* Display buyer's rating for this seller if available */}
-                          {(() => {
-                            const buyerRating = receivedRatings.find(r => r.order?.id === order.id);
-                            return buyerRating ? (
-                              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <span className="text-sm font-medium text-blue-800">Buyer's Rating & Review:</span>
-                                  <div className="flex space-x-1">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <Star
-                                        key={star}
-                                        className={`w-4 h-4 ${star <= buyerRating.rating
-                                          ? 'text-yellow-400 fill-current'
-                                          : 'text-gray-300'
-                                          }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-sm text-blue-700">
-                                    {buyerRating.rating}/5
-                                  </span>
-                                </div>
-                                {buyerRating.review && (
-                                  <p className="text-sm text-blue-700 mt-1">
-                                    "{buyerRating.review}"
-                                  </p>
-                                )}
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            }
+                          ) : null;
+                        })()}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Received Reviews Tab */}
-            {
-              activeTab === 'reviews' && (
-                <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                      <Star className="w-6 h-6 text-green-600 mr-3" />
-                      <h2 className="text-2xl font-bold text-gray-900">Received Reviews</h2>
-                    </div>
+            {activeTab === "reviews" && (
+              <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center">
+                    <Star className="w-6 h-6 text-green-600 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Received Reviews
+                    </h2>
                   </div>
-
-                  <RatingDisplay
-                    ratings={receivedRatings}
-                    title="Reviews from Buyers"
-                    emptyMessage="No reviews yet. Complete some orders to receive reviews from buyers."
-                  />
                 </div>
-              )
-            }
+
+                <RatingDisplay
+                  ratings={receivedRatings}
+                  title="Reviews from Buyers"
+                  emptyMessage="No reviews yet. Complete some orders to receive reviews from buyers."
+                />
+              </div>
+            )}
 
             {/* My Crops Tab */}
-            {
-              activeTab === 'my-crops' && (
-                <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                      <Wheat className="w-6 h-6 text-green-600 mr-3" />
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">My Crops</h2>
-                        <p className="text-sm text-gray-600 mt-1">Click on any product to see how buyers view it</p>
-                      </div>
+            {activeTab === "my-crops" && (
+              <div className="bg-white rounded-2xl shadow-sm p-4 lg:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center">
+                    <Wheat className="w-6 h-6 text-green-600 mr-3" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        My Crops
+                      </h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Click on any product to see how buyers view it
+                      </p>
                     </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("add-product")}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t("farmer.addProduct")}
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">
+                      {t("messages.loadingProducts")}
+                    </div>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Wheat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {t("status.noProductsYet")}
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      {t("status.startByAdding")}
+                    </p>
                     <button
-                      onClick={() => setActiveTab('add-product')}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                      onClick={() => setActiveTab("add-product")}
+                      className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {t('farmer.addProduct')}
+                      {t("status.addYourFirstProduct")}
                     </button>
                   </div>
-
-                  {loading ? (
-                    <div className="text-center py-8">
-                      <div className="text-gray-500">{t('messages.loadingProducts')}</div>
-                    </div>
-                  ) : products.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Wheat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">{t('status.noProductsYet')}</h3>
-                      <p className="text-gray-500 mb-4">{t('status.startByAdding')}</p>
-                      <button
-                        onClick={() => setActiveTab('add-product')}
-                        className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {products.map((product) => (
+                      <div
+                        key={product.id}
+                        className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
                       >
-                        {t('status.addYourFirstProduct')}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {products.map((product) => (
-                        <div key={product.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer">
+                        <div
+                          className="w-full h-32 bg-gray-100 rounded-lg mb-4 flex items-center justify-center relative"
+                          onClick={() => handleViewProduct(product)}
+                        >
+                          {product.photos && product.photos.length > 0 ? (
+                            <Image
+                              src={getValidImageUrl(product.photos[0])}
+                              alt={product.name}
+                              fill
+                              className="object-cover rounded-lg"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              unoptimized
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = "none";
+                                const fallback =
+                                  target.parentElement?.querySelector(
+                                    ".fallback-icon",
+                                  ) as HTMLElement;
+                                if (fallback) fallback.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
                           <div
-                            className="w-full h-32 bg-gray-100 rounded-lg mb-4 flex items-center justify-center relative"
-                            onClick={() => handleViewProduct(product)}
+                            className={`fallback-icon w-full h-full flex items-center justify-center ${product.photos && product.photos.length > 0 ? "absolute inset-0" : ""}`}
+                            style={{
+                              display:
+                                product.photos && product.photos.length > 0
+                                  ? "none"
+                                  : "flex",
+                            }}
                           >
-                            {product.photos && product.photos.length > 0 ? (
-                              <Image
-                                src={getValidImageUrl(product.photos[0])}
-                                alt={product.name}
-                                fill
-                                className="object-cover rounded-lg"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                unoptimized
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const fallback = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
-                              />
-                            ) : null}
-                            <div className={`fallback-icon w-full h-full flex items-center justify-center ${product.photos && product.photos.length > 0 ? 'absolute inset-0' : ''}`} style={{ display: product.photos && product.photos.length > 0 ? 'none' : 'flex' }}>
-                              <ImageIcon className="w-8 h-8 text-gray-400" />
-                            </div>
-                          </div>
-                          <div onClick={() => handleViewProduct(product)}>
-                            <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                            <div className="space-y-1 text-sm text-gray-600">
-                              <p>{t('productInfo.category')}: {product.category}</p>
-                              <p>{t('productInfo.singlePrice')}: ₹{product.price_single}/kg</p>
-                              {product.price_multiple && <p>{t('productInfo.bulk')}: ₹{product.price_multiple}/kg</p>}
-                              <p>{t('productInfo.stock')}: {product.quantity}kg</p>
-                              <p>{t('productInfo.location')}: {product.location}</p>
-                              {product.photos && product.photos.length > 0 && (
-                                <p className="text-blue-600">📸 {product.photos.length} {product.photos.length > 1 ? t('productInfo.photosPlural') : t('productInfo.photos')}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="mt-3 flex justify-between items-center">
-                            <span className={`px-2 py-1 rounded-full text-xs ${product.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-orange-100 text-orange-800'
-                              }`}>
-                              {product.status}
-                            </span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewProduct(product);
-                                }}
-                                className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                              >
-                                {t('common.view')}
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditProduct(product);
-                                }}
-                                className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 rounded hover:bg-green-50 transition-colors"
-                              >
-                                {t('common.edit')}
-                              </button>
-                            </div>
+                            <ImageIcon className="w-8 h-8 text-gray-400" />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            }
+                        <div onClick={() => handleViewProduct(product)}>
+                          <h3 className="font-semibold text-gray-900 mb-2">
+                            {product.name}
+                          </h3>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>
+                              {t("productInfo.category")}: {product.category}
+                            </p>
+                            <p>
+                              {t("productInfo.singlePrice")}: ₹
+                              {product.price_single}/kg
+                            </p>
+                            {product.price_multiple && (
+                              <p>
+                                {t("productInfo.bulk")}: ₹
+                                {product.price_multiple}/kg
+                              </p>
+                            )}
+                            <p>
+                              {t("productInfo.stock")}: {product.quantity}kg
+                            </p>
+                            <p>
+                              {t("productInfo.location")}: {product.location}
+                            </p>
+                            {product.photos && product.photos.length > 0 && (
+                              <p className="text-blue-600">
+                                📸 {product.photos.length}{" "}
+                                {product.photos.length > 1
+                                  ? t("productInfo.photosPlural")
+                                  : t("productInfo.photos")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-between items-center">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              product.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-orange-100 text-orange-800"
+                            }`}
+                          >
+                            {product.status}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProduct(product);
+                              }}
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                            >
+                              {t("common.view")}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditProduct(product);
+                              }}
+                              className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                            >
+                              {t("common.edit")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Dashboard Tab */}
-            {
-              activeTab === 'dashboard' && user && (
-                <Dashboard
-                  userType="farmer"
-                  userId={user.id}
-                  products={products}
-                  orders={orders}
-                  userStats={userStats}
-                  userLocation={userLocation}
-                />
-              )
-            }
-          </div >
-        </div >
-      </div >
+            {activeTab === "dashboard" && user && (
+              <Dashboard
+                userType="farmer"
+                userId={user.id}
+                products={products}
+                orders={orders}
+                userStats={userStats}
+                userLocation={userLocation}
+              />
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Rating Modal */}
-      {
-        selectedOrderForRating && (
-          <RatingModal
-            isOpen={showRatingModal}
-            onClose={() => {
-              setShowRatingModal(false);
-              setSelectedOrderForRating(null);
-            }}
-            order={selectedOrderForRating}
-            currentUserId={user?.id || 0}
-            currentUserType="seller"
-            onRatingSubmit={handleRatingSubmit}
-            existingRating={orderRatings[selectedOrderForRating.id]}
-          />
-        )
-      }
+      {selectedOrderForRating && (
+        <RatingModal
+          isOpen={showRatingModal}
+          onClose={() => {
+            setShowRatingModal(false);
+            setSelectedOrderForRating(null);
+          }}
+          order={selectedOrderForRating}
+          currentUserId={user?.id || 0}
+          currentUserType="seller"
+          onRatingSubmit={handleRatingSubmit}
+          existingRating={orderRatings[selectedOrderForRating.id]}
+        />
+      )}
 
       {/* Edit Product Modal */}
-      {
-        editingProduct && (
-          <EditProduct
-            product={editingProduct}
-            isOpen={showEditModal}
-            onClose={() => {
-              setShowEditModal(false);
-              setEditingProduct(null);
-            }}
-            onSave={handleSaveProduct}
-            onDelete={handleDeleteProduct}
-            userId={user?.id || 0}
-          />
-        )
-      }
+      {editingProduct && (
+        <EditProduct
+          product={editingProduct}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleSaveProduct}
+          onDelete={handleDeleteProduct}
+          userId={user?.id || 0}
+        />
+      )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="farmer"
+        type={alertInfo.type}
+      />
 
       {/* Product Details Modal - What Buyers See */}
-      {
-        viewingProduct && (
-          <ProductDetails
-            product={viewingProduct}
-            isOpen={showProductDetails}
-            onClose={() => {
-              setShowProductDetails(false);
-              setViewingProduct(null);
-            }}
-            userRole="farmer"
-            currentUserId={user?.id}
-          />
-        )
-      }
-    </div >
+      {viewingProduct && (
+        <ProductDetails
+          product={viewingProduct}
+          isOpen={showProductDetails}
+          onClose={() => {
+            setShowProductDetails(false);
+            setViewingProduct(null);
+          }}
+          userRole="farmer"
+          currentUserId={user?.id}
+        />
+      )}
+    </div>
   );
 }

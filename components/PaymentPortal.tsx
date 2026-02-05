@@ -1,7 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { X, CreditCard, MapPin, User, Phone, Mail, CheckCircle } from 'lucide-react';
+import { useState } from "react";
+import {
+  X,
+  CreditCard,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  CheckCircle,
+} from "lucide-react";
+import AlertModal from "./AlertModal";
 
 interface CartItem {
   id: number;
@@ -22,48 +31,75 @@ interface PaymentPortalProps {
   onPaymentSuccess: () => void;
 }
 
-export default function PaymentPortal({ 
-  isOpen, 
-  onClose, 
-  cartItems, 
-  userId, 
-  onPaymentSuccess 
+export default function PaymentPortal({
+  isOpen,
+  onClose,
+  cartItems,
+  userId,
+  onPaymentSuccess,
 }: PaymentPortalProps) {
   const [step, setStep] = useState(1); // 1: Details, 2: Payment, 3: Success
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    pincode: '',
-    notes: '',
-    paymentMethod: 'card'
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    pincode: "",
+    notes: "",
+    paymentMethod: "card",
   });
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
 
   if (!isOpen) return null;
 
   // Calculate totals
   const calculateItemTotal = (item: CartItem) => {
-    const price = item.cart_quantity >= 10 ? item.price_multiple : item.price_single;
+    const price =
+      item.cart_quantity >= 10 ? item.price_multiple : item.price_single;
     return price * item.cart_quantity;
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + calculateItemTotal(item),
+    0,
+  );
   const deliveryFee = 50;
   const total = subtotal + deliveryFee;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleNextStep = () => {
     if (step === 1) {
       // Validate form
-      if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-        alert('Please fill in all required fields');
+      if (
+        !formData.fullName ||
+        !formData.email ||
+        !formData.phone ||
+        !formData.address
+      ) {
+        showAlert("Please fill in all required fields", "warning");
         return;
       }
       setStep(2);
@@ -72,59 +108,61 @@ export default function PaymentPortal({
 
   const handlePayment = async () => {
     setLoading(true);
-    
+
     try {
       // Process payment (simulate success for now)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // Create orders for each item
       const orderResults = [];
-      
+
       for (const item of cartItems) {
         try {
-          const response = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const response = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               buyerId: userId,
               sellerId: item.seller_id,
               productId: item.id,
               quantity: item.cart_quantity,
-              unitPrice: item.cart_quantity >= 10 ? item.price_multiple : item.price_single,
+              unitPrice:
+                item.cart_quantity >= 10
+                  ? item.price_multiple
+                  : item.price_single,
               totalPrice: calculateItemTotal(item),
               deliveryAddress: `${formData.address}, ${formData.city} - ${formData.pincode}`,
-              notes: formData.notes
-            })
+              notes: formData.notes,
+            }),
           });
 
           const result = await response.json();
-          console.log('Order result:', result);
+          console.log("Order result:", result);
           orderResults.push({ success: response.ok, result });
         } catch (error) {
-          console.error('Order creation error:', error);
+          console.error("Order creation error:", error);
           orderResults.push({ success: false, error });
         }
       }
 
-      console.log('All order results:', orderResults);
+      console.log("All order results:", orderResults);
 
       // For now, always proceed to success (simulate all payments work)
       // Clear cart
       try {
-        await fetch('/api/cart/clear', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
+        await fetch("/api/cart/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
         });
       } catch (error) {
-        console.error('Cart clear error:', error);
+        console.error("Cart clear error:", error);
       }
 
       setStep(3);
       onPaymentSuccess();
-
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error("Payment error:", error);
       // For now, even if there are errors, show success
       setStep(3);
       onPaymentSuccess();
@@ -139,9 +177,16 @@ export default function PaymentPortal({
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">
-            {step === 1 ? 'Delivery Details' : step === 2 ? 'Payment' : 'Order Confirmed!'}
+            {step === 1
+              ? "Delivery Details"
+              : step === 2
+                ? "Payment"
+                : "Order Confirmed!"}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -214,7 +259,9 @@ export default function PaymentPortal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
                   <input
                     type="text"
                     name="city"
@@ -225,7 +272,9 @@ export default function PaymentPortal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">PIN Code *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    PIN Code *
+                  </label>
                   <input
                     type="text"
                     name="pincode"
@@ -238,7 +287,9 @@ export default function PaymentPortal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Special Instructions</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Special Instructions
+                </label>
                 <textarea
                   name="notes"
                   value={formData.notes}
@@ -251,11 +302,15 @@ export default function PaymentPortal({
 
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Order Summary
+                </h3>
                 <div className="space-y-2">
-                  {cartItems.map(item => (
+                  {cartItems.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.name} × {item.cart_quantity}kg</span>
+                      <span>
+                        {item.name} × {item.cart_quantity}kg
+                      </span>
                       <span>₹{calculateItemTotal(item)}</span>
                     </div>
                   ))}
@@ -289,14 +344,16 @@ export default function PaymentPortal({
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Payment Method</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Payment Method
+                </h3>
                 <div className="space-y-3">
                   <label className="flex items-center">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="card"
-                      checked={formData.paymentMethod === 'card'}
+                      checked={formData.paymentMethod === "card"}
                       onChange={handleInputChange}
                       className="mr-3"
                     />
@@ -308,7 +365,7 @@ export default function PaymentPortal({
                       type="radio"
                       name="paymentMethod"
                       value="upi"
-                      checked={formData.paymentMethod === 'upi'}
+                      checked={formData.paymentMethod === "upi"}
                       onChange={handleInputChange}
                       className="mr-3"
                     />
@@ -320,7 +377,7 @@ export default function PaymentPortal({
                       type="radio"
                       name="paymentMethod"
                       value="cod"
-                      checked={formData.paymentMethod === 'cod'}
+                      checked={formData.paymentMethod === "cod"}
                       onChange={handleInputChange}
                       className="mr-3"
                     />
@@ -331,9 +388,12 @@ export default function PaymentPortal({
               </div>
 
               <div className="bg-blue-50 rounded-xl p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Total Amount: ₹{total}</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Total Amount: ₹{total}
+                </h3>
                 <p className="text-sm text-blue-700">
-                  Your order will be processed immediately after payment confirmation.
+                  Your order will be processed immediately after payment
+                  confirmation.
                 </p>
               </div>
 
@@ -349,7 +409,7 @@ export default function PaymentPortal({
                   disabled={loading}
                   className="flex-1 bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
-                  {loading ? 'Processing...' : `Pay ₹${total}`}
+                  {loading ? "Processing..." : `Pay ₹${total}`}
                 </button>
               </div>
             </div>
@@ -360,13 +420,18 @@ export default function PaymentPortal({
             <div className="text-center space-y-6">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto" />
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Payment Successful!
+                </h3>
                 <p className="text-gray-600">
-                  Your order has been placed successfully. You will receive a confirmation email shortly.
+                  Your order has been placed successfully. You will receive a
+                  confirmation email shortly.
                 </p>
               </div>
               <div className="bg-green-50 rounded-xl p-4">
-                <p className="text-green-800 font-medium">Order Total: ₹{total}</p>
+                <p className="text-green-800 font-medium">
+                  Order Total: ₹{total}
+                </p>
                 <p className="text-sm text-green-600 mt-1">
                   Estimated delivery: 2-3 business days
                 </p>
@@ -381,6 +446,16 @@ export default function PaymentPortal({
           )}
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="buyer"
+        type={alertInfo.type}
+      />
     </div>
   );
 }

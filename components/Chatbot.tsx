@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, MicOff, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { MessageCircle, X, Send, Mic, MicOff, Loader2 } from "lucide-react";
+import AlertModal from "./AlertModal";
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
@@ -16,13 +17,12 @@ interface ChatbotProps {
 
 const parseMarkdown = (text: string) => {
   try {
+    const lines = text.split("\n");
 
-    const lines = text.split('\n');
-    
     return lines.map((line, lineIndex) => {
       // Handle bullet points (• or -)
-      if (line.trim().startsWith('•') || line.trim().match(/^[\s]*[-*][\s]/)) {
-        const content = line.replace(/^[\s]*[•\-*][\s]*/, '');
+      if (line.trim().startsWith("•") || line.trim().match(/^[\s]*[-*][\s]/)) {
+        const content = line.replace(/^[\s]*[•\-*][\s]*/, "");
         return (
           <div key={lineIndex} className="flex items-start mb-1">
             <span className="text-green-600 mr-2 mt-0.5 flex-shrink-0">•</span>
@@ -30,7 +30,7 @@ const parseMarkdown = (text: string) => {
           </div>
         );
       }
-      
+
       // Handle numbered lists
       if (/^\s*\d+\./.test(line)) {
         const match = line.match(/^(\s*)(\d+\.)(.*)$/);
@@ -38,13 +38,15 @@ const parseMarkdown = (text: string) => {
           const [, , number, content] = match;
           return (
             <div key={lineIndex} className="flex items-start mb-1">
-              <span className="text-green-600 mr-2 font-medium flex-shrink-0">{number}</span>
+              <span className="text-green-600 mr-2 font-medium flex-shrink-0">
+                {number}
+              </span>
               <span className="flex-1">{parseBoldText(content.trim())}</span>
             </div>
           );
         }
       }
-      
+
       // Handle regular lines
       if (line.trim()) {
         return (
@@ -53,13 +55,13 @@ const parseMarkdown = (text: string) => {
           </div>
         );
       }
-      
+
       // Empty lines for spacing
       return <div key={lineIndex} className="mb-2"></div>;
     });
   } catch (error) {
     // Fallback to simple text if parsing fails
-    console.warn('Markdown parsing failed, falling back to plain text:', error);
+    console.warn("Markdown parsing failed, falling back to plain text:", error);
     return <div className="whitespace-pre-wrap">{text}</div>;
   }
 };
@@ -68,9 +70,9 @@ const parseMarkdown = (text: string) => {
 const parseBoldText = (text: string) => {
   try {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    
+
     return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
         // Remove ** and make bold
         const boldText = part.slice(2, -2);
         return (
@@ -90,7 +92,7 @@ const parseBoldText = (text: string) => {
 export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: 'assistant',
+      role: "assistant",
       content: `🌾 Hello! I'm your agricultural advisor. I can help you with:
 
 • Crop cultivation and farming techniques
@@ -104,49 +106,70 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
 Try asking: "How do I grow tomatoes?" or "What's the best fertilizer for wheat?"
 
 How can I help you today?`,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
-  
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(
+    null,
+  );
+
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    title: "Notification",
+    type: "info" as "success" | "error" | "info" | "warning",
+  });
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+    title: string = "Notification",
+  ) => {
+    setAlertInfo({ isOpen: true, message, title, type });
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (
+      typeof window !== "undefined" &&
+      ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)
+    ) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
-      
+
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
-      recognitionInstance.lang = 'en-IN'; // Indian English
-      
+      recognitionInstance.lang = "en-IN"; // Indian English
+
       recognitionInstance.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setInputMessage(transcript);
         setIsListening(false);
       };
-      
+
       recognitionInstance.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        console.error("Speech recognition error:", event.error);
         setIsListening(false);
       };
-      
+
       recognitionInstance.onend = () => {
         setIsListening(false);
       };
-      
+
       setRecognition(recognitionInstance);
     }
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Focus input when chatbot opens
@@ -160,28 +183,28 @@ How can I help you today?`,
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
-      role: 'user',
+      role: "user",
       content: inputMessage.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chatbot', {
-        method: 'POST',
+      const response = await fetch("/api/chatbot", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: userMessage.content,
-          conversationHistory: messages.slice(-8).map(msg => ({
+          conversationHistory: messages.slice(-8).map((msg) => ({
             role: msg.role,
-            content: msg.content
-          })) // Keep only last 8 messages for context
-        })
+            content: msg.content,
+          })), // Keep only last 8 messages for context
+        }),
       });
 
       if (!response.ok) {
@@ -189,42 +212,48 @@ How can I help you today?`,
       }
 
       const data = await response.json();
-      
+
       if (data.response) {
         const botMessage: ChatMessage = {
-          role: 'assistant',
+          role: "assistant",
           content: data.response,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
-        setMessages(prev => [...prev, botMessage]);
+        setMessages((prev) => [...prev, botMessage]);
       } else if (data.error) {
         throw new Error(data.error);
       } else {
-        throw new Error('No response from chatbot');
+        throw new Error("No response from chatbot");
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       const errorMessage: ChatMessage = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please check your internet connection and try again.',
-        timestamp: new Date()
+        role: "assistant",
+        content:
+          "Sorry, I encountered an error. Please check your internet connection and try again.",
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+      alert("Voice recognition is not supported in your browser");
+      return;
     }
   };
 
   const toggleVoiceRecognition = () => {
     if (!recognition) {
-      alert('Voice recognition is not supported in your browser');
+      showAlert(
+        "Voice recognition is not supported in your browser",
+        "warning",
+      );
       return;
     }
 
@@ -238,10 +267,10 @@ How can I help you today?`,
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-IN', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -250,18 +279,20 @@ How can I help you today?`,
   return (
     <>
       {/* Overlay backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
         onClick={onClose}
       />
-      
+
       {/* Chatbot container */}
-      <div className={`
+      <div
+        className={`
         fixed z-50 bg-white shadow-2xl
         lg:bottom-4 lg:right-4 lg:w-96 lg:h-[600px] lg:rounded-2xl
         inset-0 lg:inset-auto
         flex flex-col
-      `}>
+      `}
+      >
         {/* Header */}
         <div className="bg-green-600 text-white p-4 lg:rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center">
@@ -284,45 +315,58 @@ How can I help you today?`,
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[80%] p-3 rounded-2xl ${
-                  message.role === 'user'
-                    ? 'bg-green-600 text-white rounded-br-md'
-                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm border'
+                  message.role === "user"
+                    ? "bg-green-600 text-white rounded-br-md"
+                    : "bg-white text-gray-800 rounded-bl-md shadow-sm border"
                 }`}
               >
                 <div className="text-sm">
-                  {message.role === 'assistant' ? parseMarkdown(message.content) : (
+                  {message.role === "assistant" ? (
+                    parseMarkdown(message.content)
+                  ) : (
                     <div className="whitespace-pre-wrap">{message.content}</div>
                   )}
                 </div>
-                <p className={`text-xs mt-1 ${
-                  message.role === 'user' ? 'text-green-100' : 'text-gray-500'
-                }`}>
+                <p
+                  className={`text-xs mt-1 ${
+                    message.role === "user" ? "text-green-100" : "text-gray-500"
+                  }`}
+                >
                   {formatTime(message.timestamp)}
                 </p>
               </div>
             </div>
           ))}
-          
+
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border p-3">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
                   </div>
                   <span className="text-sm text-gray-600">Thinking...</span>
                 </div>
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -334,10 +378,10 @@ How can I help you today?`,
               <p className="text-xs text-gray-500 mb-2">Quick questions:</p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  'How to grow tomatoes?',
-                  'Best fertilizer for wheat?',
-                  'Pest control for crops?',
-                  'Soil testing tips?'
+                  "How to grow tomatoes?",
+                  "Best fertilizer for wheat?",
+                  "Pest control for crops?",
+                  "Soil testing tips?",
                 ].map((question, index) => (
                   <button
                     key={index}
@@ -358,10 +402,10 @@ How can I help you today?`,
               disabled={isLoading}
               className={`p-2 rounded-lg transition-colors ${
                 isListening
-                  ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? "bg-red-100 text-red-600 hover:bg-red-200"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={isListening ? 'Stop listening' : 'Start voice input'}
+              title={isListening ? "Stop listening" : "Start voice input"}
             >
               {isListening ? (
                 <MicOff className="w-5 h-5" />
@@ -377,7 +421,11 @@ How can I help you today?`,
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isListening ? 'Listening...' : 'Ask about farming, crops, livestock...'}
+              placeholder={
+                isListening
+                  ? "Listening..."
+                  : "Ask about farming, crops, livestock..."
+              }
               disabled={isLoading || isListening}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
@@ -395,7 +443,7 @@ How can I help you today?`,
               )}
             </button>
           </div>
-          
+
           {/* Voice recognition status */}
           {isListening && (
             <div className="mt-2 flex items-center justify-center">
@@ -407,6 +455,16 @@ How can I help you today?`,
           )}
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertInfo.isOpen}
+        onClose={() => setAlertInfo((prev) => ({ ...prev, isOpen: false }))}
+        message={alertInfo.message}
+        title={alertInfo.title}
+        userType="farmer"
+        type={alertInfo.type}
+      />
     </>
   );
 }
